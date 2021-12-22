@@ -14,10 +14,12 @@ DIY content server for MediaStation X<br>**It is under development, for testing 
 ### To do:
 - More plugins
 ## Installation
-Choose the apropriate file for your OS/Architecture from the releases, download it and just run. It can be also installed as a service.<br>For windows, please use [NSSM](https://nssm.cc/usage).<br>For Linux/OSX use the native service manager.
+Choose the apropriate file for your OS/Architecture from the releases, download it and just run.<br>It can be also installed as a service:
+- For windows, please use [NSSM](https://nssm.cc/usage).
+- For Linux/OSX use the native service manager (e.g. systemd, launchd, etc).
 ### Run paramters:
 **ServeMSX [options]**<br>Where **[options]** can be one or more of:
-- *[IP]<:PORT>* - the address of the http server is listen to (default is **:8008**)
-- *-i* - do not log info messages (recomended to reduce log size)
-- *-t* - do not print timestamp in logs (useful for systemd service manager)
-- *-s* - skip verifying TLS sertificates (useful for tiny OS, like on routers)
+- **[IP]<:PORT>** - the address of the http server is listen to (default is **:8008**)
+- **-i** - do not log info messages (recomended to reduce log size)
+- **-t** - do not print timestamp in logs (useful for systemd service manager)
+- **-s** - skip verifying TLS sertificates (useful for tiny OS, like on routers)
