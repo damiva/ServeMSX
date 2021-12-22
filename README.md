@@ -16,7 +16,7 @@ DIY content server for MediaStation X<br>**It is under development, for testing 
 ## Installation
 Choose the apropriate file for your OS/Architecture from the releases, download it and just run.<br>It can be also installed as a service:
 - For windows, please use [NSSM](https://nssm.cc/usage).
-- For Linux/OSX use the native service manager (e.g. systemd, launchd, etc).
+- For Linux/OSX use the native service manager (e.g. systemd, launchd, etc). For example for Systemd manager you can use the file: [ServeMSX.service](ServeMSX.service)
 ### Run paramters:
 **ServeMSX [options]**<br>Where **[options]** can be one or more of:
 - **[IP]<:PORT>** - the address of the http server is listen to (default is **:8008**)
