@@ -5,7 +5,7 @@ DIY content server for MediaStation X<br>**It is under development, for testing 
 ### Now:
 - Serves local video & audio files
 - Serves local torrent files ([TorrServer](https://github.com/YouROK/TorrServer/releases) need to be used)
-- Serves TorrSerever's torrents ([TorrServer](https://github.com/YouROK/TorrServer/releases) need to be used)
+- Serves TorrServer's torrents ([TorrServer](https://github.com/YouROK/TorrServer/releases) need to be used)
 - Serves plugins, written on [Tengo language](https://github.com/d5/tengo) (see [Plugins Development Manual](PLUGINS.md))
 - One plugin is dveloped for example: [tivix](https://github.com/damiva/ServeMSX-Plugs)
 ### In development:
