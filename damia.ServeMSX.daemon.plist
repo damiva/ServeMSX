@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE plist PUBLIC '-//Apple//DTD PLIST 1.0//EN' 'http://www.apple.com/DTDs/PropertyList-1.0.dtd'>
+<plist version='1.0'>
+  <dict>
+    <key>Label</key>
+    <string>damiva.ServeMSX.daemon</string>
+    <key>ServiceDescription</key>
+    <string>ServeMSX for Media Station X</string>
+    <key>ProgramArguments</key>
+    <array><string>/opt/ServeMSX/ServeMSX</string><string>-i</string></array>
+    <key>WorkingDirectory</key>
+    <string>/opt/ServeMSX</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <true/>
+    </dict>
+    <key>StandardErrorPath</key>
+    <string>/opt/ServeMSX/errors.log</string>
+    <key>ProcessType</key>
+    <string>Background</string>
+  </dict>
+</plist>
