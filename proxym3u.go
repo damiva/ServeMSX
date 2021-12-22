@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	http.HandleFunc("/proxy.m3u", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/proxy.m3u8", func(w http.ResponseWriter, r *http.Request) {
 		check(r.ParseForm())
 		u := r.FormValue("link")
 		if u == "" {
