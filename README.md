@@ -3,9 +3,9 @@ DIY content server for MediaStation X<br>**It is under development, for testing 
 
 ## Functionality
 ### Now:
-- Serves local (server) video & audio files
-- Serves local toeernt files ([TorrServer](https://github.com/YouROK/TorrServer/releases) need to be installed)
-- Serves TorrSerever's torrents ([TorrServer](https://github.com/YouROK/TorrServer/releases) need to be installed)
+- Serves local video & audio files
+- Serves local torrent files ([TorrServer](https://github.com/YouROK/TorrServer/releases) need to be used)
+- Serves TorrSerever's torrents ([TorrServer](https://github.com/YouROK/TorrServer/releases) need to be used)
 - Serves plugins, written on [Tengo language](https://github.com/d5/tengo) (see [Plugins Development Manual](PLUGINS.md))
 - One plugin is dveloped for example: [tivix](https://github.com/damiva/ServeMSX-Plugs)
 ### In development:
@@ -23,3 +23,7 @@ Choose the apropriate file for your OS/Architecture from the releases, download 
 - **-i** - do not log info messages (recomended to reduce log size)
 - **-t** - do not print timestamp in logs (useful for systemd service manager)
 - **-s** - skip verifying TLS sertificates (useful for tiny OS, like on routers)
+### Warning for running as service:
+- Errors logs to STDERR, 
+- Info messages logs to STDOUT,
+- It should be restarted on successful (code 0) exit, becuse it succesfully exits only when it is restarting (manually from MSX or for self updating)
