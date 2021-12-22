@@ -15,8 +15,15 @@ DIY content server for MediaStation X<br>**It is under development, for testing 
 - More plugins
 ## Installation
 Choose the apropriate file for your OS/Architecture from the releases, download it and just run.<br>It can be also installed as a service:
-- For windows, please use [NSSM](https://nssm.cc/usage).
-- For Linux/OSX use the native service manager (e.g. systemd, launchd, etc). For example for Systemd manager you can use the file: [ServeMSX.service](ServeMSX.service)
+- For **Windows**, please use [NSSM](https://nssm.cc/usage).
+- For **Linux** use native service manager, for example, for Systemd you can:
+  1. use the file: [ServeMSX.service](ServeMSX.service) 
+  2. put it to **/etc/systemd/system/**
+  3. run command: <pre># systemctl enable ServeMSX && systemctl start ServeMSX</pre>
+- For **OS X** use native service manager Launchd, for example, you can 
+  1. use the file: [damia.ServeMSX.daemon.plist](damia.ServeMSX.daemon.plist)
+  2. put it to **/Library/LaunchDaemons/** 
+  3. run command: <pre># launchctl load /Library/LaunchDaemons/damiva.ServeMSX.daemon.plist</pre>
 ### Run paramters:
 **ServeMSX [options]**<br>Where **[options]** can be one or more of:
 - **[IP]<:PORT>** - the address of the http server is listen to (default is **:8008**)
@@ -27,3 +34,12 @@ Choose the apropriate file for your OS/Architecture from the releases, download 
 - Errors logs to STDERR, 
 - Info messages logs to STDOUT,
 - It should be restarted on successful (code 0) exit, becuse it succesfully exits only when it is restarting (manually from MSX or for self updating)
+## Setup
+### Media Station X
+Go to **Setting -> Start Parameter -> Setup**, enter the address (default port is 8008) of the machine where ServeMSX is running.
+### Local media files
+In the working directory of ServeMSX, create symbolic link with the following name to your folder:
+- for video files: **video**
+- for music files: **music**
+### Torrents
+To play torrents online, you should install and use [TorrServer](https://github.com/YouROK/TorrServer/releases). In the ServeMSX on Media Station X goto **Settings -> TorrServer** and enter the address (default port is 8090) of the machine where TorrServer is running (if it is the same maching with ServeMSX, it will be detected automatically).
