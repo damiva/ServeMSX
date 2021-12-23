@@ -33,7 +33,7 @@ Choose the apropriate file for your OS/Architecture from the releases, download 
 ### Note for running as service:
 - Errors logs to STDERR, 
 - Info messages logs to STDOUT,
-- It should be restarted on successful (code 0) exit, becuse it succesfully exits only when it is restarting (manually from MSX or for self updating)
+- It should be restarted on successful (code 0) exit, becuse it exits succesfully only when it is restarting (manually from MSX or for self updating)
 ## Setup
 ### Media Station X
 Go to **Settings -> Start Parameter -> Setup**, enter the address (default port is 8008) of the machine where ServeMSX is running.
