@@ -43,3 +43,7 @@ In the working directory of ServeMSX, create symbolic link with the following na
 - for music files: **music**
 ### Torrents
 To play torrents online, you should install and use [TorrServer](https://github.com/YouROK/TorrServer/releases). In the ServeMSX on Media Station X goto **Settings -> TorrServer** and enter the address (default port is 8090) of the machine where TorrServer is running (if it is the same maching with ServeMSX, it will be detected automatically).
+### Plugins
+For now, installation of the plugins is manual:
+- download the plugins (mentioned above)
+- in the working dir of ServeMSX create the folder **plugins** and put there the plugins (e.g. **plugins/tivix/**)
