@@ -81,9 +81,9 @@ func torrLink(w http.ResponseWriter, r *http.Request, p string) {
 	if t.Active_peers > 0 || t.Total_peers > 0 {
 		l.Ext += "{br}{ico:arrow-upward} " + strconv.Itoa(t.Active_peers) + "/" + strconv.Itoa(t.Total_peers)
 	}
+	t.Title = "{col:msx-white-soft}{ico:bolt}" + t.Title + ": {col:msx-white}"
 	for _, f := range t.File_stats {
 		n, e, u := path.Base(f.Path), sizeFormat(f.Length), tu+url.PathEscape(f.Path)+"?play&link="+url.QueryEscape(p)+"&index="+strconv.Itoa(f.ID)
-		t.Title = "{col:msx-white-soft}{ico:bolt}" + t.Title + ": {col:msx-white}"
 		if x := strings.ToLower(path.Ext(n)); strings.Contains(extAud, x) {
 			as = append(as, map[string]string{
 				"label":          n,
