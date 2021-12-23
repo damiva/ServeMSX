@@ -1,0 +1,21 @@
+{
+  "TorrServer": "192.168.0.2:8090",
+  "Russian": true,
+  "HistoryURLs": [
+    [
+      "video:http://192.168.0.111:8029/msx/video/%D0%9E%D0%B7%D0%B5%D1%80%D0%BE/1.mp4",
+      "{col:msx-white-soft}{ico:folder}Озеро: {col:msx-white}1.mp4",
+      "content:http://192.168.0.111:8029/msx/video/Озеро/?v=0.1.142\u003eindex:0"
+    ],
+    [
+      "video:http://192.168.0.111:8029/msx/video/%D0%91%D0%B5%D0%BB%D1%8B%D0%B5%20%D1%80%D0%BE%D1%81%D1%8B_1983-HDTVRip%20720p_KORSAR.mkv",
+      "Белые росы_1983-HDTVRip 720p_KORSAR.mkv",
+      "content:http://192.168.0.111:8029/msx/video/?v=0.1.142\u003eindex:2"
+    ],
+    [
+      "video:http://192.168.0.2:8090/stream/Zhuki.S01.2019.HDTV.%281080i%29.ExKinoRay%2FZhuki.Film.o.filme.2019.HDTV.%281080i%29.ExKinoRay.ts?play\u0026link=bbac93da4c30e2e8a90d0ac577095d3dcc532520\u0026index=1",
+      "{col:msx-white-soft}{ico:bolt}Жуки: {col:msx-white}Zhuki.Film.o.filme.2019.HDTV.(1080i).ExKinoRay.ts",
+      "content:http://192.168.0.111:8029/msx/torr?link=bbac93da4c30e2e8a90d0ac577095d3dcc532520\u003eindex:0"
+    ]
+  ]
+}

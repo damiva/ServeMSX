@@ -38,6 +38,8 @@ func init() {
 					id += "&addr"
 				}
 				svcAnswer(w, "panel:http://"+r.Host+r.URL.Path+"?id="+id, nil)
+			} else {
+				panic(400)
 			}
 		} else {
 			inputKbd(w, r, id, q.Has("addr"))

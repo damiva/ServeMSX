@@ -81,12 +81,7 @@ func (s *settings) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			s struct{ Data interface{} }
 			a string
 		)
-		if r.Method != "POST" {
-			panic(400)
-		} else if e := json.NewDecoder(r.Body).Decode(&s); e != nil {
-			panic(e)
-		}
-		msx := r.URL.Query().Has("v")
+		check(json.NewDecoder(r.Body).Decode(&s))
 		switch v := s.Data.(type) {
 		case string:
 			if t, e := checkTorr(v); e == nil {
@@ -105,11 +100,9 @@ func (s *settings) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case bool:
 			stg.Russian = v
 			check(stg.save())
-			if msx {
-				a, startFocus = "reload", ">stg>dic"
-			}
+			a, startFocus = "reload", ">stg>dic"
 		}
-		if msx {
+		if r.URL.Query().Has("v") {
 			svcAnswer(w, a, nil)
 		}
 	} else {

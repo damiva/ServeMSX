@@ -39,6 +39,8 @@ func init() {
 		if stg.TorrServer != "" {
 			ta, tv = "{col:msx-white}"+stg.TorrServer, stg.TorrServer
 			l.Menu = append(l.Menu, map[string]interface{}{"icon": "bolt", "label": "{dic:torrents}", "data": u + "/msx/torr"})
+		} else {
+			l.Action = "execute:service:fetch:" + u + "/msx/torr?detect"
 		}
 		l.Menu = append(l.Menu, map[string]interface{}{"type": "separator"})
 		if ps, e := plugsInfo(); e == nil {

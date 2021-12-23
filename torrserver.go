@@ -12,7 +12,13 @@ import (
 
 func init() {
 	http.HandleFunc("/msx/torr", func(w http.ResponseWriter, r *http.Request) {
-		if p := r.FormValue("link"); p != "" {
+		if r.URL.Query().Has("detect") {
+			t := r.Host[:strings.LastIndexByte(r.Host, ':')+1] + "8090"
+			if _, e := checkTorr(t); e == nil {
+				stg.TorrServer = t
+			}
+			svcAnswer(w, "[]", nil)
+		} else if p := r.FormValue("link"); p != "" {
 			torrLink(w, r, p)
 		} else if p = r.FormValue("del"); p != "" {
 			torrDel(w, p, true)

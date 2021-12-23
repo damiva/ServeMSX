@@ -13,6 +13,7 @@ type plist struct {
 	Cache    bool                                  `json:"cache"`
 	Restore  bool                                  `json:"restore"`
 	Compress bool                                  `json:"compress,omitempty"`
+	Action   string                                `json:"action,omitempty"`
 	Head     string                                `json:"headline,omitempty"`
 	Ext      string                                `json:"extension,omitempty"`
 	Logo     string                                `json:"logo,omitempty"`
