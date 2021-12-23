@@ -20,7 +20,7 @@ Choose the apropriate file for your OS/Architecture from the releases, download 
   1. use the file: [ServeMSX.service](ServeMSX.service) 
   2. put it to **/etc/systemd/system/**
   3. run command: <pre># systemctl enable ServeMSX && systemctl start ServeMSX</pre>
-- For **OS X** use native service manager Launchd, for example, you can 
+- For **OS X** use native service manager Launchd, for example, you can:
   1. use the file: [damia.ServeMSX.daemon.plist](damia.ServeMSX.daemon.plist)
   2. put it to **/Library/LaunchDaemons/** 
   3. run command: <pre># launchctl load /Library/LaunchDaemons/damiva.ServeMSX.daemon.plist</pre>
@@ -36,7 +36,7 @@ Choose the apropriate file for your OS/Architecture from the releases, download 
 - It should be restarted on successful (code 0) exit, becuse it succesfully exits only when it is restarting (manually from MSX or for self updating)
 ## Setup
 ### Media Station X
-Go to **Setting -> Start Parameter -> Setup**, enter the address (default port is 8008) of the machine where ServeMSX is running.
+Go to **Settings -> Start Parameter -> Setup**, enter the address (default port is 8008) of the machine where ServeMSX is running.
 ### Local media files
 In the working directory of ServeMSX, create symbolic link with the following name to your folder:
 - for video files: **video**
