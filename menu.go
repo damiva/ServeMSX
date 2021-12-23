@@ -18,12 +18,6 @@ func init() {
 		startFocus = ""
 	})
 	http.HandleFunc("/msx/menu", func(w http.ResponseWriter, r *http.Request) {
-		if stg.TorrServer == "" {
-			t := r.Host[:strings.LastIndexByte(r.Host, ':')+1] + "8090"
-			if _, e := checkTorr(t); e == nil {
-				stg.TorrServer = t
-			}
-		}
 		u := "http://" + r.Host
 		l := &plist{Logo: u + "/logotype.svg", Menu: []map[string]interface{}{{"icon": "history", "label": "{dic:history}", "data": u + "/msx/history"}}}
 		if _, e := os.Stat(pthVideo); !os.IsNotExist(e) {
