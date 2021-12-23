@@ -1,5 +1,5 @@
 # ServeMSX
-DIY content server for MediaStation X<br>**It is under development, for testing purposes only**
+DIY content server for [MediaStation X](https://msx.benzac.de/info/)<br>**It is under development, for testing purposes only**
 
 ## Functionality
 ### Now:
@@ -36,7 +36,7 @@ Choose the apropriate file for your OS/Architecture from the releases, download 
 - It should be restarted on successful (code 0) exit, becuse it exits succesfully only when it is restarting (manually from MSX or for self updating)
 ## Setup
 ### Media Station X
-Install Media Station X on your TV, run it, go to **Settings -> Start Parameter -> Setup** and enter the address (default port is 8008) of the machine where ServeMSX is running.
+Install [MediaStation X](https://msx.benzac.de/info/) on your TV, run it, go to **Settings -> Start Parameter -> Setup** and enter the address (default port is 8008) of the machine where ServeMSX is running.
 ### Local media files
 In the working directory of ServeMSX, create symbolic links with the following name to your folder:
 - for video files: **video**
