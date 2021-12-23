@@ -32,6 +32,7 @@ Choose the apropriate file for your OS/Architecture from the releases, download 
 - **-i** - do not log info messages (recomended to reduce log size)
 - **-t** - do not print timestamp in logs (useful for systemd service manager)
 - **-s** - skip verifying TLS sertificates (useful for tiny OS, like on routers)
+- **-d** - use the directory of execution as working directory (default is current working directory)
 ### Note for running as service:
 - Errors logs to STDERR, 
 - Info messages logs to STDOUT,
