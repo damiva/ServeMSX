@@ -42,7 +42,7 @@ In the working directory of ServeMSX, create symbolic links with the following n
 - for video files: **video**
 - for music files: **music**
 ### Torrents
-To play torrents online, you should install and use [TorrServer](https://github.com/YouROK/TorrServer/releases). In the ServeMSX on Media Station X goto **Settings -> TorrServer** and enter the address (default port is 8090) of the machine where TorrServer is running (if it is the same maching with ServeMSX, it will be detected automatically).
+To play torrents online, you should install and use [TorrServer](https://github.com/YouROK/TorrServer/releases).<br>In the ServeMSX on Media Station X goto **Settings -> TorrServer** and enter the address (default port is 8090) of the machine where TorrServer is running (if it is the same maching with ServeMSX, it will be detected automatically).
 ### Plugins
 For now, installation of the plugins is manual:
 - download the plugins (mentioned above)
