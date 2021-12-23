@@ -30,7 +30,7 @@ Choose the apropriate file for your OS/Architecture from the releases, download 
 - **-i** - do not log info messages (recomended to reduce log size)
 - **-t** - do not print timestamp in logs (useful for systemd service manager)
 - **-s** - skip verifying TLS sertificates (useful for tiny OS, like on routers)
-### Warning for running as service:
+### Note for running as service:
 - Errors logs to STDERR, 
 - Info messages logs to STDOUT,
 - It should be restarted on successful (code 0) exit, becuse it succesfully exits only when it is restarting (manually from MSX or for self updating)
