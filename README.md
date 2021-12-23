@@ -1,5 +1,5 @@
 # ServeMSX
-DIY content server for [MediaStation X](https://msx.benzac.de/info/)<br>**It is under development, for testing purposes only**
+Your content server for [MediaStation X](https://msx.benzac.de/info/)<br>**It is under development, for testing purposes only**
 
 ## Functionality
 ### Now:
