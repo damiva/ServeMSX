@@ -65,7 +65,7 @@ func init() {
 		ts := started.UnixMilli()
 		l.Menu = append(l.Menu, map[string]interface{}{"id": "stg", "icon": "settings", "label": "{dic:label:settings|Settings}",
 			"data": map[string][]map[string][]map[string]interface{}{"pages": {{"items": {
-				{"type": "space", "layout": "0,0,12,2", "image": u + "/logotype.svg", "imageFiller": "height", "imageWidth": 7, "imagePreload": true,
+				{"type": "space", "layout": "0,0,12,2", "image": u + "/logotype.svg", "imageFiller": "height-left", "imageWidth": 7, "imagePreload": true,
 					"headline":    "{txt:msx-white-soft:dic:label:version|Version} " + Vers,
 					"titleHeader": "", "titleFooter": "{ico:http}{tb}{txt:msx-white:" + r.Host +
 						"}{br}{ico:hardware}{tb}{txt:msx-white:" + runtime.GOOS + "/" + runtime.GOARCH +
