@@ -17,12 +17,12 @@ DIY content server for [MediaStation X](https://msx.benzac.de/info/)<br>**It is 
 Choose the apropriate file for your OS/Architecture from the releases, download it and just run.<br>It can be also installed as a service:
 - For **Windows**, please use [NSSM](https://nssm.cc/usage).
 - For **Linux** use native service manager, for example, for Systemd you can:
-  1. use the file: [ServeMSX.service](ServeMSX.service) 
-  2. put it to **/etc/systemd/system/**
+  1. download file ServeMSX.linux.* from the lates release, rename it to **ServeMSX**, put it to folder **/opt/ServeMSX/**
+  2. use the file: [ServeMSX.service](ServeMSX.service), put it to **/etc/systemd/system/**
   3. run command: <pre># systemctl enable ServeMSX && systemctl start ServeMSX</pre>
 - For **OS X** use native service manager Launchd, for example, you can:
-  1. use the file: [damia.ServeMSX.daemon.plist](damia.ServeMSX.daemon.plist)
-  2. put it to **/Library/LaunchDaemons/** 
+  1. download file ServeMSX.darwin.* from the latest release, rename it to **ServeMSX**, put it to folder **/opt/ServeMSX/**
+  2. use the file: [damia.ServeMSX.daemon.plist](damia.ServeMSX.daemon.plist), put it to **/Library/LaunchDaemons/** 
   3. run command: <pre># launchctl load /Library/LaunchDaemons/damiva.ServeMSX.daemon.plist</pre>
 ### Run paramters:
 **ServeMSX [options]**<br>Where **[options]** can be one or more of:
