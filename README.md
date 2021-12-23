@@ -38,7 +38,7 @@ Choose the apropriate file for your OS/Architecture from the releases, download 
 ### Media Station X
 Go to **Settings -> Start Parameter -> Setup**, enter the address (default port is 8008) of the machine where ServeMSX is running.
 ### Local media files
-In the working directory of ServeMSX, create symbolic link with the following name to your folder:
+In the working directory of ServeMSX, create symbolic links with the following name to your folder:
 - for video files: **video**
 - for music files: **music**
 ### Torrents
