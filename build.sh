@@ -1,7 +1,7 @@
 #!/bin/bash
 
 Vers=$1
-Name=ForkServer
+Name=ServeMSX
 echo "package main" > version.go
 echo "const Name, Vers = \"$Name\", \"$Vers\"" >> version.go
 PLATFORMS=(

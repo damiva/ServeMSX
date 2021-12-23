@@ -1,2 +1,2 @@
 package main
-const Name, Vers = "ForkServer", "0.05"
+const Name, Vers = "ServeMSX", "0.07"
