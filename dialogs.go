@@ -3,20 +3,20 @@ package main
 import (
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 )
 
-var (
-	keyboards = map[bool]string{false: "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ@-:.,/?+();!&\"", true: "1234567890АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ,.:?!-+"}
-	boxTxt    = make(map[string][4]string)
-	boxRus    = make(map[string]bool)
-)
+type dialogStg struct{ Action, Headline, Extension, Value string }
 
-type dialogSets struct {
-	Data struct{ Action, Headline, Extension, Value string }
-}
+var (
+	keyboards = map[bool]string{false: "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ@-:.,/?+();!&\"", true: ""}
+	boxText   = make(map[string]dialogStg)
+	boxLang   = make(map[string]bool)
+)
 
 func init() {
 	http.HandleFunc("/msx/input", func(w http.ResponseWriter, r *http.Request) {
@@ -27,13 +27,18 @@ func init() {
 		}
 		if r.Method == "POST" {
 			var key struct{ Data string }
-			var stg dialogSets
+			var stg struct{ Data dialogStg }
 			b, e := ioutil.ReadAll(r.Body)
 			check(e)
 			if json.Unmarshal(b, &key) == nil {
 				inputKey(w, id, key.Data)
 			} else if json.Unmarshal(b, &stg) == nil {
-				boxTxt[id] = [4]string{stg.Data.Action, stg.Data.Headline, stg.Data.Value, stg.Data.Extension}
+				if k, e := getDicKeyboard(); e == nil {
+					keyboards[true] = k
+				} else {
+					log.Println(e)
+				}
+				boxText[id] = stg.Data
 				if q.Has("addr") {
 					id += "&addr"
 				}
@@ -46,13 +51,13 @@ func init() {
 		}
 	})
 	http.HandleFunc("/msx/dialog", func(w http.ResponseWriter, r *http.Request) {
-		var dat dialogSets
+		var dat struct{ Data dialogStg }
 		if r.Method != "POST" {
 			panic(400)
 		} else if e := json.NewDecoder(r.Body).Decode(&dat); e != nil {
 			panic("Parsing dialog data error: " + e.Error())
 		}
-		svcAnswer(w, "panel:data", &plist{Head: dat.Data.Headline, Ext: dat.Data.Extension, Pages: []map[string][]map[string]interface{}{{"items": {
+		svcAnswer(w, "panel:data", &plist{Head: dat.Data.Headline, Ext: dat.Data.Extension, Pages: []map[string][]plistObj{{"items": {
 			{"type": "space", "text": dat.Data.Value, "layout": "0,0,8,6"},
 			{"type": "button", "icon": "done", "layout": "4,5,2,1", "action": dat.Data.Action, "display": dat.Data.Action != ""},
 			{"type": "button", "icon": "close", "layout": "6,5,2,1", "action": "back"},
@@ -60,12 +65,10 @@ func init() {
 	})
 }
 func inputKbd(w http.ResponseWriter, r *http.Request, id string, ka bool) {
-	bx, at := boxTxt[id], "execute:service:http://"+r.Host+r.URL.Path+"?id="+id
-	ks := []map[string]interface{}{
-		{"id": "txt", "type": "space", "label": bx[2], "color": "msx-black-soft", "layout": "0,0,10,1"},
-	}
+	bx, at := boxText[id], "execute:service:http://"+r.Host+r.URL.Path+"?id="+id
+	ks := []plistObj{{"id": "txt", "type": "space", "label": bx.Value, "color": "msx-black-soft", "layout": "0,0,10,1"}}
 	i := 0
-	for _, k := range keyboards[boxRus[id] && !ka] {
+	for _, k := range keyboards[boxLang[id] && !ka] {
 		y := i / 10
 		x := i - y*10
 		uk := string(k)
@@ -96,32 +99,34 @@ func inputKbd(w http.ResponseWriter, r *http.Request, id string, ka bool) {
 	if ka {
 		ks[40]["progress"], ks[40]["progressColor"], ks[40]["key"] = 1, "msx-yellow", ".|yellow"
 		ks[53]["enable"], ks[54]["enable"] = false, false
+	} else if keyboards[true] == "" {
+		ks[54]["enable"] = false
 	}
-	(&plist{Head: bx[1], Ext: bx[3], Compress: true, Pages: []map[string][]map[string]interface{}{{"items": ks}}}).write(w)
+	(&plist{Head: bx.Headline, Ext: bx.Extension, Compress: true, Pages: []map[string][]plistObj{{"items": ks}}}).write(w)
 }
 func inputKey(w http.ResponseWriter, id, key string) {
-	b := boxTxt[id]
+	b := boxText[id]
 	switch key {
 	case "\n":
-		svcAnswer(w, b[0], b[2])
+		svcAnswer(w, strings.ReplaceAll(b.Action, "{INPUT}", url.QueryEscape(b.Value)), b.Value)
 	case "<lng>":
-		boxRus[id] = !boxRus[id]
+		boxLang[id] = !boxLang[id]
 		svcAnswer(w, "reload:panel", nil)
 	case "<clr>":
-		b[2] = ""
+		b.Value = ""
 		fallthrough
 	case "<del>":
 		key = ""
-		if l := len(b[2]); l > 0 {
-			b[2] = b[2][:l-1]
+		if l := len(b.Value); l > 0 {
+			b.Value = b.Value[:l-1]
 		}
 		fallthrough
 	default:
-		b[2] += key
-		boxTxt[id] = b
-		if strings.HasSuffix(b[2], " ") {
-			b[2] = strings.TrimSuffix(b[2], " ") + "{txt:msx-white-soft:_}"
+		b.Value += key
+		boxText[id] = b
+		if strings.HasSuffix(b.Value, " ") {
+			b.Value = strings.TrimSuffix(b.Value, " ") + "{txt:msx-white-soft:_}"
 		}
-		svcAnswer(w, "update:panel:txt", map[string]string{"label": b[2]})
+		svcAnswer(w, "update:panel:txt", map[string]string{"label": b.Value})
 	}
 }

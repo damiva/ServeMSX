@@ -15,6 +15,7 @@ PLATFORMS=(
     'windows/amd64'
     'windows/386'
 )
+gzip -f -k assets/index.html
 for PLATFORM in "${PLATFORMS[@]}"; do
     o=${PLATFORM%/*}
     a=${PLATFORM#*/}
@@ -30,3 +31,4 @@ for PLATFORM in "${PLATFORMS[@]}"; do
     if [[ "$o" -ne "windows" ]]; then chmod +x $f; fi
     echo "done!"
 done
+#rm -f embed/index.html.gz

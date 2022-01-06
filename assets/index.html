@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="author" content="damiva">
+        <meta name="copyright" content="damiva">    
+        <link rel="shortcut icon" href="/logo.svg" type="image/png">
+        <title>ServeMSX</title>
+        <script>
+            function info(){
+                var x = new XMLHttpRequest();
+                x.onerror = function(){
+                    document.getElementById("inf").innerHTML = this.status + " " + this.statusText;
+                }
+                x.onload = function(){
+                    if(this.status != 200) this.onerror();
+                    else document.getElementById("info").innerHTML = this.responseText;
+                }
+                x.open("GET", "/settings");
+                x.send();
+            }
+            function msx(){
+                window.location.href = "http://msx.benzac.de/?start=menu:" + window.location.href + "msx/menu.json"
+            }
+        </script>
+    </head>
+    <body onload="info()">
+        <h1>UNDERCONSTRUCTION!</h1>
+        <button onclick="msx()">Media Station X</button>
+        <p id="inf">Info:<br><pre id="info"></pre></p>
+    </body>
+</html>

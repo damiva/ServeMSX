@@ -29,33 +29,34 @@ func files(w http.ResponseWriter, r *http.Request) {
 	} else {
 		fs, e := ioutil.ReadDir(p)
 		check(e)
-		var ts, ms []map[string]string
-		l, act, ext := &plist{Head: filepath.Base(p)}, "", ""
-		pre := f.Name()
+		var (
+			l       *plist
+			ext     string
+			ts, ms  []plistObj
+			id, pre = r.FormValue("id"), f.Name()
+		)
+		if v {
+			l, ext = plistMedia(r, filepath.Base(p), "msx-white-soft:movie"), extVid
+		} else {
+			l, ext = plistMedia(r, filepath.Base(p), "msx-white-soft:audiotrack"), extAud
+		}
 		if pre == pthMusic || pre == pthVideo {
 			pre = ""
 		} else {
-			pre = "{col:msx-white-soft}{ico:folder}" + pre + ": {col:msx-white}"
-		}
-		if v {
-			l.mediaList(r, "movie", true)
-			act, ext = "video:", extVid
-		} else {
-			l.mediaList(r, "audiotrack", true)
-			act, ext = "audio:", extAud
+			pre = "{col:msx-white-soft}" + pre + ": {col:msx-white}"
 		}
 		for _, f := range fs {
 			n := f.Name()
 			x, u := strings.ToLower(filepath.Ext(n)), "http://"+r.Host+r.URL.EscapedPath()+url.PathEscape(n)
 			switch {
 			case f.IsDir():
-				l.Items = append(l.Items, map[string]string{"icon": "msx-yellow:folder", "label": n, "action": "content:" + u + "/"})
+				l.Items = append(l.Items, plistObj{"icon": "msx-yellow:folder", "label": n, "action": "content:" + u + "/"})
 			case x == ".torrent":
 				if stg.TorrServer != "" {
-					ts = append(ts, map[string]string{"icon": "msx-yellow:bolt", "label": n, "action": "content:http://" + r.Host + "/msx/torr?link=" + url.QueryEscape(u)})
+					ts = append(ts, plistObj{"icon": "msx-yellow:offline-bolt", "label": n, "action": "content:http://" + r.Host + "/msx/torr?id={ID}&link=" + url.QueryEscape(u)})
 				}
 			case strings.Contains(ext, x):
-				ms = append(ms, map[string]string{"label": n, "extensionLabel": sizeFormat(f.Size()), "playerLabel": pre + n, "action": act + u})
+				ms = append(ms, plistObj{"label": n, "extensionLabel": sizeFormat(f.Size()), "playerLabel": pre + n, "action": playerURL(id, u, v)})
 			}
 		}
 		l.Items = append(l.Items, append(ts, ms...)...)

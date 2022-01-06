@@ -29,28 +29,48 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"sync"
+	"syscall"
 	"time"
 )
 
 var (
 	out     = log.New(os.Stdout, "(i) ", log.Flags())
-	stg     = new(settings)
 	mutex   = new(sync.Mutex)
 	started = time.Now()
+	signals = make(chan os.Signal, 1)
 )
 
+func init() {
+	signal.Notify(signals, os.Interrupt, syscall.SIGTERM, syscall.SIGABRT)
+	go func() {
+		s := <-signals
+		if stg.toSave {
+			if e := stg.save(); e != nil {
+				log.Println("Savings settings error:", e)
+			}
+		}
+		mutex.Lock()
+		if s == syscall.SIGABRT {
+			log.Println("Restarting...")
+			os.Exit(0)
+		}
+		log.Println("Closing server, because of OS signal catched:", s)
+		if e := server.Close(); e != nil {
+			log.Fatalln("Closing error:", e)
+		}
+	}()
+}
 func check(e error) {
 	if e != nil {
 		panic(e)
 	}
 }
-
 func main() {
 	defer log.Fatalln(recover())
 	log.SetPrefix("<!> ")
-	la := ":8008"
 	for _, a := range os.Args[1:] {
 		switch a {
 		case "-t":
@@ -66,34 +86,10 @@ func main() {
 			check(e)
 			check(os.Chdir(filepath.Dir(p)))
 		default:
-			la = a
+			server.Addr = a
 		}
 	}
 	check(stg.load())
-	out.Println(Name, "v.", Vers, "listening at", la)
-	check(http.ListenAndServe(la, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
-			if e := recover(); e != nil {
-				switch v := e.(type) {
-				case int:
-					http.Error(w, http.StatusText(v), v)
-				case string:
-					http.Error(w, v, 500)
-				case error:
-					http.Error(w, v.Error(), 500)
-				default:
-					http.Error(w, "Unknown error!", 500)
-				}
-				log.Println(e)
-			}
-		}()
-		out.Println(r.Method, ":", r.RequestURI)
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Accept")
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
-		if r.Method != "OPTIONS" {
-			w.Header().Set("Server", Name+"/"+Vers)
-			http.DefaultServeMux.ServeHTTP(w, r)
-		}
-	})))
+	out.Println(Name, "v.", Vers, "listening at", server.Addr)
+	check(server.ListenAndServe())
 }
