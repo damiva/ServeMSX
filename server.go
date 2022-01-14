@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"syscall"
 )
 
 type embedFile struct {
@@ -62,9 +61,7 @@ func init() {
 	http.Handle("/logotype.png", embedFile{"image/png", false, logotype})
 	http.HandleFunc("/restart", func(w http.ResponseWriter, r *http.Request) {
 		svcAnswer(w, "reload", nil)
-		mutex.Lock()
-		signals <- syscall.SIGABRT
-		mutex.Unlock()
+		go restart()
 	})
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {

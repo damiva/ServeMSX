@@ -1,5 +1,6 @@
 package main
 
+/*
 import (
 	"crypto/sha1"
 	"encoding/hex"
@@ -65,16 +66,17 @@ func recentAdd(r *http.Request, id string, ix int, it recentItem) string {
 	return act + "player:ticking:restart|trigger:10t:execute:service:video:http://" + r.Host + "/msx/recent?hash=" + id + "]"
 }
 func recentUp(h string, p, d int64) string {
-	if i := stg.Recent[h]; i.Ref == "" {
-		panic(404)
-	} else if d-p > 12 {
-		i.Pos, i.Dur, i.Lts = p, d, time.Now().Unix()
-		stg.Recent[h] = i
-	} else {
-		delete(stg.Recent, h)
+	if i := stg.Recent[h]; i.Ref != "" {
+		stg.toSave = true
+		if d-p > 12 {
+			i.Pos, i.Dur, i.Lts = p, d, time.Now().Unix()
+			stg.Recent[h] = i
+			return "player:ticking:restart"
+		} else {
+			delete(stg.Recent, h)
+		}
 	}
-	stg.toSave = true
-	return "player:ticking:restart"
+	return "[]"
 }
 func recentList(w http.ResponseWriter, r *http.Request) {
 	p := &plist{Type: "List", Template: map[string]interface{}{"type": "control", "layout": "0,0,12,1"}}
@@ -96,3 +98,4 @@ func recentList(w http.ResponseWriter, r *http.Request) {
 	sort.Slice(p.Items, func(i, j int) bool { return p.Items[i]["timestamp"].(int64) > p.Items[j]["timestamp"].(int64) })
 	p.write(w)
 }
+*/

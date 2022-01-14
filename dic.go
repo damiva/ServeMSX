@@ -57,14 +57,14 @@ func init() {
 		}
 	})
 }
-func getDicKeyboard() (k string, e error) {
+func getDic() (n, k string, e error) {
 	var (
-		d struct{ Keyboard string }
+		d struct{ Name, Keyboard string }
 		f *os.File
 	)
 	if f, e = os.Open(pthDic); e == nil {
 		if e = json.NewDecoder(f).Decode(&d); e == nil {
-			k = d.Keyboard
+			n, k = d.Name, d.Keyboard
 		} else {
 			e = errors.New("Decoding " + pthDic + " error: " + e.Error())
 		}

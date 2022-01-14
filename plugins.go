@@ -18,7 +18,10 @@ import (
 
 const pthPlugs, manifest, mainTengo = "plugins", "manifest.json", "main.tengo"
 
-type pluginf struct{ Label, Image, Icon, URL string }
+type pluginf struct {
+	Label, Image, Icon, URL string
+	Torrent                 bool
+}
 type pluginfo struct {
 	pluginf
 	Name  string
@@ -85,7 +88,6 @@ func tengoRun(w http.ResponseWriter, r *http.Request, script, plug, path string)
 	t.EnableFileImport(true)
 	t.SetImportDir(plugpath)
 	mm := stdlib.GetModuleMap("math", "text", "times", "rand", "json", "base64", "hex")
-	//	mm.AddBuiltinModule("files", (&tengofiles.FS{Dir: plugpath}).GetModuleMap())
 	mm.AddBuiltinModule("server", tengohttp.GetModuleMAP(w, r, nil, map[string]tengo.Object{
 		"version":    &tengo.String{Value: Vers},
 		"script":     &tengo.String{Value: script},
@@ -98,6 +100,7 @@ func tengoRun(w http.ResponseWriter, r *http.Request, script, plug, path string)
 		"player":     &tengo.UserFunction{Name: "player", Value: tengoPlayer(r)},
 		"log_err":    &tengo.UserFunction{Name: "log_err", Value: tengoLog(plug, log.Default())},
 		"log_inf":    &tengo.UserFunction{Name: "log_inf", Value: tengoLog(plug, out)},
+		"dictionary": &tengo.UserFunction{Name: "dictionary", Value: tengoDic},
 	}))
 	t.SetImports(mm)
 	_, e := t.Run()
@@ -139,96 +142,82 @@ func tengoMem(plug string) func(...tengo.Object) (tengo.Object, error) {
 }
 func tengoPlayer(r *http.Request) func(...tengo.Object) (tengo.Object, error) {
 	return func(args ...tengo.Object) (tengo.Object, error) {
-		l, id := len(args), ""
-		if l == 0 {
+		if l := len(args); l == 1 {
+			args = append(args, tengo.FalseValue)
+		} else if l != 2 {
 			return nil, tengo.ErrWrongNumArguments
-		} else if id, _ = tengo.ToString(args[0]); id == "" {
-			return nil, nil
-		} else if l == 1 {
-			r := clients[id].Player
-			if stg.HTML5X[id] {
-				r = "html5x"
+		}
+		id, _ := tengo.ToString(args[0])
+		switch v := args[1].(type) {
+		case *tengo.Bool:
+			ps := &tengo.Map{Value: make(map[string]tengo.Object)}
+			for k, p := range playerProp(r.Host, id, !v.IsFalsy()) {
+				ps.Value[k] = &tengo.String{Value: p}
 			}
-			return &tengo.String{Value: r}, nil
-		} else {
-			switch v := args[1].(type) {
-			case *tengo.String:
-				vid, it := true, false
-				switch l {
-				case 3:
-					vid, it = !args[2].IsFalsy(), true
-					fallthrough
-				case 2:
-					rtn := playerURL(id, v.Value, vid)
-					if !it {
-						rtn = rtn[strings.IndexByte(rtn, ':')+1:]
-					}
-					return &tengo.String{Value: rtn}, nil
-				default:
-					return nil, tengo.ErrWrongNumArguments
-				}
-			case *tengo.Bool:
-				var img, ref string
-				switch l {
-				case 4:
-					img, _ = tengo.ToString(args[3])
-					fallthrough
-				case 3:
-					ref, _ = tengo.ToString(args[2])
-					fallthrough
-				case 2:
-					if v.IsFalsy() {
-						ref = "*"
-					}
-					m := &tengo.Map{Value: make(map[string]tengo.Object)}
-					for k, v := range playerProp(r.Host, id, ref, img) {
-						m.Value[k] = &tengo.String{Value: v}
-					}
-					return m, nil
-				default:
-					return nil, tengo.ErrWrongNumArguments
-				}
-			default:
-				return nil, tengo.ErrInvalidArgumentType{Name: "second", Expected: "string/bool", Found: args[1].TypeName()}
+			return ps, nil
+		case *tengo.String:
+			iv, ul := true, v.Value
+			switch ul[:6] {
+			case "audio:":
+				iv = false
+				fallthrough
+			case "video:":
+				ul = ul[6:]
 			}
+			return &tengo.String{Value: playerURL(id, ul, iv)}, nil
+		default:
+			return nil, tengo.ErrInvalidArgumentType{Name: "first", Expected: "bool/string", Found: args[0].TypeName()}
 		}
 	}
 }
 func tengoFile(pth string) func(...tengo.Object) (tengo.Object, error) {
-	return func(args ...tengo.Object) (tengo.Object, error) {
-		flg := os.O_CREATE
-		if l := len(args); l < 1 || l > 3 {
-			return nil, tengo.ErrWrongNumArguments
-		} else if n, _ := tengo.ToString(args[0]); n == "" {
-			return nil, nil
-		} else if pth = filepath.Join(pth, filepath.Clean(n)); l == 1 {
-			if b, e := os.ReadFile(pth); e == nil {
-				return &tengo.Bytes{Value: b}, nil
+	return func(args ...tengo.Object) (rtn tengo.Object, err error) {
+		switch len(args) {
+		case 1:
+			if n, _ := tengo.ToString(args[0]); n == "" {
+				err = &tengo.ErrInvalidArgumentType{Name: "first", Expected: "not empty", Found: "empty"}
+			} else if b, e := os.ReadFile(filepath.Join(pth, filepath.Clean(n))); e == nil {
+				rtn = &tengo.Bytes{Value: b}
 			} else if !os.IsNotExist(e) {
-				return &tengo.Error{Value: &tengo.String{Value: e.Error()}}, nil
+				rtn = &tengo.Error{Value: &tengo.String{Value: e.Error()}}
 			}
-			return nil, nil
-		} else if l == 3 && !args[2].IsFalsy() {
-			flg |= os.O_APPEND
-		} else {
-			flg |= os.O_TRUNC
+		case 2:
+			if n, _ := tengo.ToString(args[0]); n == "" {
+				err = &tengo.ErrInvalidArgumentType{Name: "first", Expected: "not empty", Found: "empty"}
+			} else {
+				var (
+					b []byte
+					d bool
+					e error
+				)
+				if v, o := args[1].(*tengo.Bytes); o {
+					b = v.Value
+				} else if v, o := tengo.ToString(args[1]); o {
+					b = []byte(v)
+				} else {
+					d = true
+				}
+				if d {
+					e = os.Remove(n)
+				} else {
+					e = os.WriteFile(filepath.Join(pth, filepath.Clean(n)), b, 0666)
+				}
+				if e != nil {
+					rtn = &tengo.Error{Value: &tengo.String{Value: e.Error()}}
+				}
+			}
+		default:
+			err = tengo.ErrWrongNumArguments
 		}
-		if b, o := tengo.ToString(args[1]); o {
-			f, e := os.OpenFile(pth, flg, 0666)
-			if e != nil {
-				return &tengo.Error{Value: &tengo.String{Value: e.Error()}}, nil
-			}
-			defer f.Close()
-			n, e := f.WriteString(b)
-			if e != nil {
-				return &tengo.Error{Value: &tengo.String{Value: e.Error()}}, nil
-			}
-			return &tengo.Int{Value: int64(n)}, nil
-		} else if e := os.Remove(pth); e == nil {
-			return tengo.TrueValue, nil
-		} else if !os.IsExist(e) {
-			return &tengo.Error{Value: &tengo.String{Value: e.Error()}}, nil
-		}
-		return nil, nil
+		return
+	}
+}
+func tengoDic(args ...tengo.Object) (tengo.Object, error) {
+	if len(args) != 0 {
+		return nil, tengo.ErrWrongNumArguments
+	} else if n, _, e := getDic(); e != nil {
+		return &tengo.Error{Value: &tengo.String{Value: e.Error()}}, nil
+	} else {
+		return &tengo.String{Value: n}, nil
 	}
 }

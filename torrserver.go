@@ -18,6 +18,8 @@ func init() {
 			torrDel(w, p, true)
 		} else if p = r.FormValue("drop"); p != "" {
 			torrDel(w, p, false)
+		} else if p = r.FormValue("add"); p != "" {
+			torrAdd(w, p, r.FormValue("ttl"), r.FormValue("img"))
 		} else {
 			torrMain(w, r)
 		}
@@ -31,7 +33,18 @@ func torrMain(w http.ResponseWriter, r *http.Request) {
 	}
 	check(download("http://"+stg.TorrServer+"/torrents", &d, map[string]string{"action": "list"}))
 	sort.Slice(d, func(i, j int) bool { return d[i].Stat < d[j].Stat })
-	l := &plist{Type: "list"}
+	l := &plist{Type: "list", Ext: "{ico:bolt} {txt:msx-white:TorrServer}: " + stg.TorrServer, Template: plistObj{
+		"imageWidth": 1.25, "layout": "0,0,6,2", "imageFiller": "height-left", "icon": "msx-glass:bolt",
+		"options": plistObj{
+			"headline": "{dic:label:menu|Menu}",
+			"caption":  "{dic:label:menu|Menu}:{tb}{ico:msx-red:stop} {dic:Remove|Remove}{tb}{ico:msx-yellow:stop} {dic:Drop|Drop}",
+			"template": plistObj{"enumerate": false, "type": "control", "layout": "0,0,8,1"},
+			"items": []plistObj{
+				{"key": "red", "icon": "msx-red:stop", "label": "{dic:Remove|Remove}", "action": "execute:fetch:http://" + r.Host + "/msx/torr?del={context:id}"},
+				{"key": "yellow", "icon": "msx-yellow:stop", "label": "{dic:Drop|Drop}", "action": "execute:fetch:http://" + r.Host + "/msx/torr?drop={context:id}"},
+			},
+		},
+	}}
 	c := [6]string{"yellow", "yellow", "yellow", "green", "red", "white-soft"}
 	for _, i := range d {
 		l.Items = append(l.Items, plistObj{
@@ -40,12 +53,10 @@ func torrMain(w http.ResponseWriter, r *http.Request) {
 			"image":    i.Poster,
 			"titleFooter": "{ico:attach-file}{tb}" + sizeFormat(i.Torrent_size) + "{col:msx-" + c[i.Stat] +
 				"}{br}{ico:arrow-upward}{tb}" + strconv.Itoa(i.Active_peers) + " / " + strconv.Itoa(i.Total_peers) +
-				"{br}{ico:flag}{tb}{dic:torrent" + strconv.Itoa(i.Stat) + "}",
-			"action": "content:http://" + r.Host + "/msx/torr?id={ID}&link=" + i.Hash,
+				"{br}{ico:flag}{tb}{dic:Torrent" + strconv.Itoa(i.Stat) + "}",
+			"action": "content:http://" + r.Host + "/msx/torr?noadd&id={ID}&link=" + i.Hash,
 		})
 	}
-	l.Template = map[string]interface{}{"imageWidth": 1.25, "layout": "0,0,6,2", "imageFiller": "height-left", "icon": "msx-glass:bolt"}
-	l.opts(r, true, true)
 	l.write(w)
 }
 func torrDel(w http.ResponseWriter, i string, del bool) {
@@ -56,6 +67,21 @@ func torrDel(w http.ResponseWriter, i string, del bool) {
 	}
 	check(download("http://"+stg.TorrServer+"/torrents", &b, map[string]string{"action": a, "hash": i}))
 	svcAnswer(w, "reload:content", nil)
+}
+func torrAdd(w http.ResponseWriter, l, t, i string) {
+	u := "http://" + stg.TorrServer + "/stream/?save&link=" + url.QueryEscape(l)
+	if t != "" {
+		u += "&title=" + url.QueryEscape(t)
+	}
+	if i != "" {
+		u += "&poster=" + url.QueryEscape(i)
+	}
+	r, e := http.Get(u)
+	check(e)
+	if r.StatusCode != 200 {
+		panic(r.StatusCode)
+	}
+	svcAnswer(w, "info:OK", nil)
 }
 func torrLink(w http.ResponseWriter, r *http.Request, p string) {
 	var t struct {
@@ -70,12 +96,10 @@ func torrLink(w http.ResponseWriter, r *http.Request, p string) {
 	}
 	check(download("http://"+stg.TorrServer+"/stream/?stat&link="+url.QueryEscape(p), &t, nil))
 	var as []plistObj
-	l, tu, id := plistMedia(r, t.Title, ""), "http://"+stg.TorrServer+"/stream/", r.FormValue("id")
-	l.Ext = sizeFormat(t.Torrent_size)
+	l, tu, id := mediaList(r, t.Title, "{ico:msx-white:offline-bolt} "+sizeFormat(t.Torrent_size), true), "http://"+stg.TorrServer+"/stream/", r.FormValue("id")
 	if t.Active_peers > 0 || t.Total_peers > 0 {
-		l.Ext += "{br}{ico:arrow-upward} " + strconv.Itoa(t.Active_peers) + "/" + strconv.Itoa(t.Total_peers)
+		l.Ext += "{tb}{ico:msx-white:arrow-upward} " + strconv.Itoa(t.Active_peers) + "/" + strconv.Itoa(t.Total_peers)
 	}
-	t.Title = "{col:msx-white-soft}" + t.Title + ": {col:msx-white}"
 	for _, f := range t.File_stats {
 		n, e, u := path.Base(f.Path), sizeFormat(f.Length), tu+url.PathEscape(f.Path)+"?play&link="+url.QueryEscape(p)+"&index="+strconv.Itoa(f.ID)
 		if x := strings.ToLower(path.Ext(n)); strings.Contains(extAud, x) {
@@ -83,7 +107,7 @@ func torrLink(w http.ResponseWriter, r *http.Request, p string) {
 				"label":          n,
 				"icon":           "msx-white-soft:audiotrack",
 				"group":          "{dic:label:audio|Audio}",
-				"playerLabel":    t.Title + n,
+				"playerLabel":    n,
 				"extensionLabel": e,
 				"action":         playerURL(id, u, false),
 			})
@@ -92,13 +116,21 @@ func torrLink(w http.ResponseWriter, r *http.Request, p string) {
 				"label":          n,
 				"icon":           "msx-white-soft:movie",
 				"group":          "{dic:label:video|Video}",
-				"playerLabel":    t.Title + n,
+				"playerLabel":    n,
 				"extensionLabel": e,
 				"action":         playerURL(id, u, true),
 			})
 		}
 	}
 	l.Items = append(l.Items, as...)
+	if !r.Form.Has("noadd") {
+		l.Header = plistObj{"items": []plistObj{{
+			"type":   "button",
+			"label":  "{dic:AddTorr|Add to My torrents}",
+			"action": "execute:fetch:http://" + r.Host + "/msx/torr?add=" + url.QueryEscape(p) + "&ttl=" + url.QueryEscape(r.FormValue("ttl")) + "&img=" + url.QueryEscape(r.FormValue("img")),
+			"layout": "4,0,4,1",
+		}}}
+	}
 	l.write(w)
 }
 func checkTorr(a string) (v string, e error) {

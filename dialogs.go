@@ -33,7 +33,7 @@ func init() {
 			if json.Unmarshal(b, &key) == nil {
 				inputKey(w, id, key.Data)
 			} else if json.Unmarshal(b, &stg) == nil {
-				if k, e := getDicKeyboard(); e == nil {
+				if _, k, e := getDic(); e == nil {
 					keyboards[true] = k
 				} else {
 					log.Println(e)
@@ -58,7 +58,7 @@ func init() {
 			panic("Parsing dialog data error: " + e.Error())
 		}
 		svcAnswer(w, "panel:data", &plist{Head: dat.Data.Headline, Ext: dat.Data.Extension, Pages: []map[string][]plistObj{{"items": {
-			{"type": "space", "text": dat.Data.Value, "layout": "0,0,8,6"},
+			{"type": "space", "headline": dat.Data.Value, "layout": "0,0,8,6", "alignment": "center"},
 			{"type": "button", "icon": "done", "layout": "4,5,2,1", "action": dat.Data.Action, "display": dat.Data.Action != ""},
 			{"type": "button", "icon": "close", "layout": "6,5,2,1", "action": "back"},
 		}}}})
@@ -66,7 +66,7 @@ func init() {
 }
 func inputKbd(w http.ResponseWriter, r *http.Request, id string, ka bool) {
 	bx, at := boxText[id], "execute:service:http://"+r.Host+r.URL.Path+"?id="+id
-	ks := []plistObj{{"id": "txt", "type": "space", "label": bx.Value, "color": "msx-black-soft", "layout": "0,0,10,1"}}
+	ks := []plistObj{{"id": "txt", "type": "space", "label": bx.Value, "color": "msx-black-soft", "layout": "0,0,10,1", "offset": "0,0.3,0,0.3", "compress": false}}
 	i := 0
 	for _, k := range keyboards[boxLang[id] && !ka] {
 		y := i / 10
@@ -83,7 +83,7 @@ func inputKbd(w http.ResponseWriter, r *http.Request, id string, ka bool) {
 	for i, k := range [][4]string{
 		{"backspace", "red|delete", "<del>", "fast-rewind"},
 		{"clear", "home", "<clr>", "skip-previous"},
-		{"space-bar", "space|yellow|insert", " ", "fast-forward"},
+		{"space-bar", "yellow|space|insert", " ", "fast-forward"},
 		{"language", "end|tab|caps_lock", "<lng>", "skip-next"},
 		{"done", "green", "\n", ""},
 	} {
@@ -117,8 +117,10 @@ func inputKey(w http.ResponseWriter, id, key string) {
 		fallthrough
 	case "<del>":
 		key = ""
-		if l := len(b.Value); l > 0 {
-			b.Value = b.Value[:l-1]
+		rs := []rune(b.Value)
+		if l := len(rs); l > 0 {
+			rs = rs[:len(rs)-1]
+			b.Value = string(rs)
 		}
 		fallthrough
 	default:

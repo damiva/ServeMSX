@@ -29,20 +29,20 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"sync"
-	"syscall"
 	"time"
 )
 
 var (
 	out     = log.New(os.Stdout, "(i) ", log.Flags())
 	mutex   = new(sync.Mutex)
+	mypath  string
 	started = time.Now()
-	signals = make(chan os.Signal, 1)
+	//signals = make(chan os.Signal, 1)
 )
 
+/*
 func init() {
 	signal.Notify(signals, os.Interrupt, syscall.SIGTERM, syscall.SIGABRT)
 	go func() {
@@ -63,14 +63,23 @@ func init() {
 		}
 	}()
 }
+*/
+func restart() {
+	mutex.Lock()
+	log.Println("Restarting...")
+	os.Exit(0)
+}
 func check(e error) {
 	if e != nil {
 		panic(e)
 	}
 }
 func main() {
+	var e error
 	defer log.Fatalln(recover())
 	log.SetPrefix("<!> ")
+	mypath, e = os.Executable()
+	check(e)
 	for _, a := range os.Args[1:] {
 		switch a {
 		case "-t":
@@ -82,14 +91,19 @@ func main() {
 		case "-s":
 			http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 		case "-d":
-			p, e := os.Executable()
-			check(e)
-			check(os.Chdir(filepath.Dir(p)))
+			check(os.Chdir(filepath.Dir(mypath)))
 		default:
-			server.Addr = a
+			if a[0] != '-' {
+				server.Addr = a
+			}
 		}
 	}
 	check(stg.load())
+	if e = os.Remove(mypath + ".old"); e == nil {
+		out.Println(Name, "has been updated!")
+	} else if !os.IsNotExist(e) {
+		log.Println(e)
+	}
 	out.Println(Name, "v.", Vers, "listening at", server.Addr)
 	check(server.ListenAndServe())
 }

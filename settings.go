@@ -12,22 +12,25 @@ import (
 
 const pthSettings = "settings.json"
 
+/*
 type recentItem struct {
 	Lbl, Ref, Img string
 	Pos, Dur, Lts int64
 	Vid           bool
 }
+*/
 type settings struct {
-	TorrServer  string
-	CheckUpdate int64
-	HTML5X      map[string]bool
-	Recent      map[string]recentItem
-	toSave      bool
+	TorrServer string
+	//CheckUpdate int64
+	HTML5X map[string]bool
+	//Plugins     map[string]string
+	//Recent      map[string]recentItem
+	//toSave      bool
 }
 type client struct{ Addr, Platform, Player, Vers string }
 
 var (
-	stg     = &settings{HTML5X: make(map[string]bool), Recent: make(map[string]recentItem)}
+	stg     = &settings{HTML5X: make(map[string]bool)}
 	clients = make(map[string]client)
 )
 
@@ -35,21 +38,17 @@ func init() {
 	http.Handle("/settings", stg)
 }
 func (s *settings) save() (e error) {
-	if s.toSave {
-		var f *os.File
-		mutex.Lock()
-		if f, e = os.Create(pthSettings); e == nil {
-			j := json.NewEncoder(f)
-			j.SetIndent("", "  ")
-			if e = j.Encode(s); e != nil {
-				e = errors.New("Encoding " + pthSettings + " error: " + e.Error())
-			} else {
-				s.toSave = false
-			}
-			f.Close()
+	var f *os.File
+	mutex.Lock()
+	if f, e = os.Create(pthSettings); e == nil {
+		j := json.NewEncoder(f)
+		j.SetIndent("", "  ")
+		if e = j.Encode(s); e != nil {
+			e = errors.New("Encoding " + pthSettings + " error: " + e.Error())
 		}
-		mutex.Unlock()
+		f.Close()
 	}
+	mutex.Unlock()
 	return
 }
 func (s *settings) load() (e error) {
@@ -60,7 +59,6 @@ func (s *settings) load() (e error) {
 		}
 		f.Close()
 	} else if os.IsNotExist(e) {
-		s.toSave = true
 		e = s.save()
 	}
 	return
@@ -73,7 +71,6 @@ func (s *settings) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			d interface{}
 		)
 		check(json.NewDecoder(r.Body).Decode(&i))
-		s.toSave = true
 		switch v := i.Data.(type) {
 		case string:
 			a, d = s.setTorr(v)

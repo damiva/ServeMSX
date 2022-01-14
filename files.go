@@ -10,16 +10,19 @@ import (
 	"strings"
 )
 
-const pthVideo, pthMusic, extVid, extAud = "video", "music", ".avi.mp4.mkv.mpeg.mpg.m4v.mp2.webm.ts.mts.m2ts.mov.wmv.flv", ".mp3.m4a.flac.wav.wma.aac"
+const (
+	pthVideo, pthMusic, pthPhoto = "video", "music", "photo"
+	extVid, extAud, extPic       = ".avi.mp4.mkv.mpeg.mpg.m4v.mp2.webm.ts.mts.m2ts.mov.wmv.flv", ".mp3.m4a.flac.wav.wma.aac", ".jpg.png"
+)
 
 func init() {
-	http.HandleFunc("/msx/video/", files)
-	http.HandleFunc("/msx/music/", files)
+	for _, f := range [3]string{pthVideo, pthMusic, pthPhoto} {
+		http.HandleFunc("/msx/"+f+"/", files)
+	}
 }
 
 func files(w http.ResponseWriter, r *http.Request) {
 	p := filepath.Clean(strings.TrimPrefix(r.URL.Path, "/msx/"))
-	v := p[0] == 'v'
 	if f, e := os.Stat(p); os.IsNotExist(e) {
 		panic(404)
 	} else if e != nil {
@@ -30,33 +33,39 @@ func files(w http.ResponseWriter, r *http.Request) {
 		fs, e := ioutil.ReadDir(p)
 		check(e)
 		var (
-			l       *plist
-			ext     string
-			ts, ms  []plistObj
-			id, pre = r.FormValue("id"), f.Name()
+			l      *plist
+			ext    string
+			z      = "label"
+			ts, ms []plistObj
+			t      byte
 		)
-		if v {
-			l, ext = plistMedia(r, filepath.Base(p), "msx-white-soft:movie"), extVid
-		} else {
-			l, ext = plistMedia(r, filepath.Base(p), "msx-white-soft:audiotrack"), extAud
-		}
-		if pre == pthMusic || pre == pthVideo {
-			pre = ""
-		} else {
-			pre = "{col:msx-white-soft}" + pre + ": {col:msx-white}"
+		id := r.FormValue("id")
+		switch t = p[0]; t {
+		case 'p':
+			ext, l, z = extPic, &plist{Type: "list", Head: f.Name(), Ext: "{ico:photo-library}", Template: plistObj{"imageFiller": "smart", "layout": "0,0,3,2"}}, "headline"
+		case 'm':
+			l, ext = mediaList(r, f.Name(), "{ico:library-music}", false), extAud
+		default:
+			l, ext = mediaList(r, f.Name(), "{ico:video-library}", true), extVid
 		}
 		for _, f := range fs {
 			n := f.Name()
 			x, u := strings.ToLower(filepath.Ext(n)), "http://"+r.Host+r.URL.EscapedPath()+url.PathEscape(n)
 			switch {
 			case f.IsDir():
-				l.Items = append(l.Items, plistObj{"icon": "msx-yellow:folder", "label": n, "action": "content:" + u + "/"})
+				l.Items = append(l.Items, plistObj{"icon": "msx-yellow:folder", z: n, "action": "content:" + u + "/"})
 			case x == ".torrent":
-				if stg.TorrServer != "" {
-					ts = append(ts, plistObj{"icon": "msx-yellow:offline-bolt", "label": n, "action": "content:http://" + r.Host + "/msx/torr?id={ID}&link=" + url.QueryEscape(u)})
+				if t != 'p' && stg.TorrServer != "" {
+					ts = append(ts, plistObj{"icon": "msx-yellow:offline-bolt", z: n, "action": "content:http://" + r.Host + "/msx/torr?id={ID}&link=" + url.QueryEscape(u)})
 				}
 			case strings.Contains(ext, x):
-				ms = append(ms, plistObj{"label": n, "extensionLabel": sizeFormat(f.Size()), "playerLabel": pre + n, "action": playerURL(id, u, v)})
+				i := plistObj{z: n, "playerLabel": n, "extensionLabel": sizeFormat(f.Size())}
+				if t == 'p' {
+					i["image"], i["action"] = u, "image:"+u
+				} else {
+					i["action"] = playerURL(id, u, t == 'v')
+				}
+				ms = append(ms, i)
 			}
 		}
 		l.Items = append(l.Items, append(ts, ms...)...)
