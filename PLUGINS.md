@@ -31,7 +31,7 @@ THe example of the **manifest.json**:
 {
   "Label": "My Plugin",
   "Image": "{BASE_URL}logo.png",
-  "URL":   "{BASE_URL}start.tengo",
+  "URL":   "{BASE_URL}start.tengo"
 }
 ```
 ### Plugins execution
