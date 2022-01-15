@@ -4,10 +4,11 @@ Plugins for the ServeMSX is a small scripts for generating/parsing contents to s
 Plugins can be written on the server side on [tengo langiage](https://github.com/d5/tengo), on the client (Media Station X) side on JavaScript. 
 The interface between server and client is JSON API.
 
-For client side plugins and JSON API of Media Station X see: [msx.benzac.de/wiki](https://msx.benzac.de/wiki)
+For client side plugins and JSON API of Media Station X see: [msx.benzac.de/wiki](https://msx.benzac.de/wiki).
+
 This docuemnt describes the structure of a plugin and tengo libraty for the scripts on server side.
 ## Plugin structure
-Plugin is a folder with as minimum one required file **manifest.json**. The name of the plugin is the name of the folder (**do not use name "msx", becuse it is used be the system**). It places into the folder **plugins** in the working directory of SeveMSX. There can be any files in the plugin's folder, including images, video, audio, scripts. Script files (with extension **.tengo** will be executed by the server all other files will be send to the client as is (if requested). The default script file is **main.tengo**, it is executed if the plugin's folder requested.
+Plugin is a folder with as minimum one required file **manifest.json**. The name of the plugin is the name of the folder (**do not use name "msx", becuse it is used by the system**). It places into the folder **plugins** in the working directory of SeveMSX. There can be any files in the plugin's folder, including images, video, audio, scripts. Script files (with extension **.tengo** will be executed, all other files will be send to the client as is (if requested). The default script file is **main.tengo**, it is executed if the plugin's folder requested.
 
 The example of plugin's folder named "myplugin":
 - :open_file_folder: plugins
@@ -35,17 +36,17 @@ THe example of the **manifest.json**:
 ```
 ### Plugins execution
 Plugins are executed on client's HTTP request to the ServeMSX: **http://{ip}:{port}/{plugin}/[path]**, where **[path]** is compared to the path in the plugin's folder (plugins/**{plugin}**/**[path]**):
-- if the **[path]** is omited or does not correspond to the existing file of the plugin's folder, **main.tengo** is executing
-- if the **[path]** corresponds to the directory of the plugins's folder, **main.tengo** in the directory is executed,
-- if the **[path]** corresponds to the **.tengo** file, the file is executed,
+- if the **[path]** is omited or does not correspond to the existing file of the plugin's folder, **main.tengo** is executed;
+- if the **[path]** corresponds to the directory of the plugins's folder, **main.tengo** in the directory is executed;
+- if the **[path]** corresponds to the **.tengo** file, the file is executed;
 - if the **[path]** correspands to any other existing file, the file is sent to the client.
 
 For example in the structure described above, the requests:
-- **http://{ip}:{port}/myplugin/** - executes main.tengo;
-- **http://{ip}:{port}/myplugin/opa** - executes main.tengo;
-- **http://{ip}:{port}/myplugin/main.tengo** - executes main.tengo;
-- **http://{ip}:{port}/myplugin/start.tengo** - executes start.tengo;
-- **http://{ip}:{port}/myplugin/logo.png** - responds woth the logo.png;
+- **http://{ip}:{port}/myplugin/** - executes main.tengo,
+- **http://{ip}:{port}/myplugin/opa** - executes main.tengo,
+- **http://{ip}:{port}/myplugin/main.tengo** - executes main.tengo,
+- **http://{ip}:{port}/myplugin/start.tengo** - executes start.tengo,
+- **http://{ip}:{port}/myplugin/logo.png** - responds woth the logo.png.
 ## Tengo scription
 Plugin's scripts on server side have to be written on tengo language (see the description of the language: [github.com/d5/tengo](https://github.com/d5/tengo)).
 ### Standard Library
@@ -70,14 +71,14 @@ For the security purposes the standard library "os" is not included in ServeMSX.
   base64 encoding and decoding functions
 ### Additional builtin functions
 One builtin function is added:
+
 `panic({any})`, where if {any} is *undefined* it does nothing, else stops the program and if:
 - {any} is *int* - returns HTTP status *int* to the client and logs it;
 - {any} is other - returns HTTP status 500 with body **string({any})** to the client ang logs **string({any})**.
-### Additional library
-The library "**server**" is included.
+### Additional library "server"
 #### Usage
 ```
-import("server")
+srv := import("server")
 ```
 #### Properties
 - `proto {string}`: the protocol version for the request;
