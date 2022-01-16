@@ -60,7 +60,7 @@ One builtin function is added:
 `panic({any})`, where if {any} is *undefined* it does nothing, else stops the program and if:
 - {any} is *int* - returns HTTP status *int* to the client and logs it;
 - {any} is other - returns HTTP status 500 with body **string({any})** to the client ang logs **string({any})**.
-### Additional library "server"
+### Additional module "server"
 #### Usage
 ```
 srv := import("server")
