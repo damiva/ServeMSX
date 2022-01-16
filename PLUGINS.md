@@ -47,29 +47,14 @@ For example in the structure described above, the requests:
 - **http://{ip}:{port}/myplugin/main.tengo** - executes main.tengo,
 - **http://{ip}:{port}/myplugin/start.tengo** - executes start.tengo,
 - **http://{ip}:{port}/myplugin/logo.png** - responds woth the logo.png.
-## Tengo scription
+## Tengo scripting
 Plugin's scripts on server side have to be written on tengo language (see the description of the language: [github.com/d5/tengo](https://github.com/d5/tengo)).
-### Standard Library
-For the security purposes the standard library "os" is not included in ServeMSX. The included standard library is:
-- [text](https://github.com/d5/tengo/blob/master/docs/stdlib-text.md): regular
-  expressions, string conversion, and manipulation
-- [math](https://github.com/d5/tengo/blob/master/docs/stdlib-math.md):
-  mathematical constants and functions
-- [times](https://github.com/d5/tengo/blob/master/docs/stdlib-times.md):
-  time-related functions
-- [rand](https://github.com/d5/tengo/blob/master/docs/stdlib-rand.md):
-  random functions
-- [fmt](https://github.com/d5/tengo/blob/master/docs/stdlib-fmt.md):
-  formatting functions
-- [json](https://github.com/d5/tengo/blob/master/docs/stdlib-json.md): JSON
-  functions
-- [enum](https://github.com/d5/tengo/blob/master/docs/stdlib-enum.md):
-  Enumeration functions
-- [hex](https://github.com/d5/tengo/blob/master/docs/stdlib-hex.md): hex
-  encoding and decoding functions
-- [base64](https://github.com/d5/tengo/blob/master/docs/stdlib-base64.md):
-  base64 encoding and decoding functions
-### Additional builtin functions
+### Tengo language references
+- [Language Syntax](https://github.com/d5/tengo/blob/master/docs/tutorial.md)
+- [Runtime Types](https://github.com/d5/tengo/blob/master/docs/runtime-types.md) and [Operators](https://github.com/d5/tengo/blob/master/docs/operators.md)
+- [Builtin Functions](https://github.com/d5/tengo/blob/master/docs/builtins.md)
+- [Standard Library](https://github.com/d5/tengo/blob/master/docs/stdlib.md) (**due to security reasons, "os" module is excluded from ServeMSX**)
+### Additional builtin function
 One builtin function is added:
 
 `panic({any})`, where if {any} is *undefined* it does nothing, else stops the program and if:
@@ -81,31 +66,31 @@ One builtin function is added:
 srv := import("server")
 ```
 #### Properties
-- `proto {string}`: the protocol version for the request;
-- `method {string}`: the HTTP method (GET, POST, PUT, etc.) of the request;
-- `host {string}`: the host on which the URL is sought;
-- `remote_addr {string}`: the network address that sent the request;
-- `header {map of arrays of strings}`: the request header fields;
-- `uri {string}`: unmodified request-target of the Request-Line (RFC 7230, Section 3.1.1) as sent by the client to a server;
-- `version {string}`: the current version of ServeMSX,
-- `script {string}: the name of script file is running,
-- `plugin {string}`: the name of the plugin is running,
-- `path {string}`: the path of the request's uri (after plugin name) (e.g. http://{ip}:{port}/{plugin}/**[path]**),
-- `base_url {string}`: the base url of the plugin (e.g. **http://{ip}:{port}/{plugin}/**) 
-- `torrserver {string}`: the address of the TorrServer (if it is not set - empty string),
+- `proto {string}`: the protocol version for the request.
+- `method {string}`: the HTTP method (GET, POST, PUT, etc.) of the request.
+- `host {string}`: the host on which the URL is sought.
+- `remote_addr {string}`: the network address that sent the request.
+- `header {map of arrays of strings}`: the request header fields.
+- `uri {string}`: unmodified request-target of the Request-Line (RFC 7230, Section 3.1.1) as sent by the client to a server.
+- `version {string}`: the current version of ServeMSX.
+- `script {string}: the name of script file is running.
+- `plugin {string}`: the name of the plugin is running.
+- `path {string}`: the path of the request's uri (after plugin name) (e.g. http://{ip}:{port}/{plugin}/**[path]**).
+- `base_url {string}`: the base url of the plugin (e.g. **http://{ip}:{port}/{plugin}/**).
+- `torrserver {string}`: the address of the TorrServer (if it is not set - empty string).
 
 #### Functions
-- `read() => {bytes/error}`: returns the request body as is;
+- `read() => {bytes/error}`: returns the request body as is.
 - `read({bool}) => {map of arrays of strings}`: parses the request and:
 	- if {bool} is falsy, returns the fields of the query, POST/PUT body parameters take precedence over URL query string values;
-	- else returns the fields of the POST/PUT body parameters;
+	- else returns the fields of the POST/PUT body parameters.
 - `read({string}[, bool]) => {string/undefined}`: parses the request and returns the first value of the named {string} field of:
-	- if [bool] is falsy or absent: the query, POST/PUT body parameters take precedence over URL query string values;(
-	- else: the POST/PUT body parameters;
+	- if [bool] is falsy or absent: the query, POST/PUT body parameters take precedence over URL query string values;
+	- else: the POST/PUT body parameters.
 - `write([any]...) => {undefined/error}`: writes the response, where:
 	- if an argument is {map} sets the headers of the response, it should be map of arrays of strings, and should be set before status or body writings;
 	- if an argument is {int} set the http status of the response to the {int} code, it should be set before body writings, if {int} between 300 & 399 and the next argument is {string} sends the response as redirect with the code = {int} and the url = {string};
-	- any other arguments are writen to the body of the response;
+	- any other arguments are writen to the body of the response.
 - `request({string}[, string/bytes/map]) => {map/error}`: does the http request and returns the answer, where:
 	- first argument is the url of the request;
 	- if the second argument is {string} sets the http method (default is *GET*);
@@ -128,11 +113,11 @@ srv := import("server")
 	 	- "cookies" {array};
 	 	- "body" {bytes};
 	 	- "size" {int}: number of bytes;
-	 	- "url" {string}: the final url (after all redirects);
+	 	- "url" {string}: the final url (after all redirects).
 - `encode_uri({string/map}[, bool]) => {string}`: encodes:
 	- if the first parameter is map, it encodes the structure of url to string, the map should be map of arrays of string;
-	- if the first parameter is string, it escapes string to query (to path, if bool is true);
-- `decode_uri({string}[, bool]) => {string/error}`: unescapes query (path, if bool is true) to string;
+	- if the first parameter is string, it escapes string to query (to path, if bool is true).
+- `decode_uri({string}[, bool]) => {string/error}`: unescapes query (path, if bool is true) to string.
 - `parse_url([string]) => {map/error}`: parses url (if argument is absent url = url of the request) to components and returns map:
 	- "scheme" {string},
 	- "opaque" {string},
@@ -143,16 +128,37 @@ srv := import("server")
 	- "query" {map of arrays of strings}: decoded query,
 	- "raw_query" {string}: encoded query,
 	- "fragment" {string}: unescaped fragment,
-	- "raw_fragment" {string}: escaped fragment;
+	- "raw_fragment" {string}: escaped fragment.
 - `resolve_url({string}[, string]) => {string/error}`: resolves the url links:
 	- if there are two arguments, first is the base url, second is the reference to solve;
 	- if there is one argument, base url is the request url ("http://" + host + uri), and the argument is the reference to resolve.
-- `memory([any]) [any]`:,
-- `file({string}[,any]) [bytes/error]`:,
-- `player({string}[, bool/string]) {string/map}`:,
-- `log_err({any})`:,
-- `log_inf({any})`:,
-- `dictionary() [string]`:.
+- `memory([any]) [any]`: if [any] omited - reads from the memory, else writes to the memory. The memory keeps the object until ServeMSX is restarted or stoped.
+- `file({string}[,any]) [bytes/error]`: read/write file, where:
+	- if [any] omited - reads the file with the path {string} and returns {bytes/error}, if the file is not exists returns *undefined*;
+	- if [any] is *undefuned* - removes the file, and returns {undefined/error};
+	- else - writes {any} to the file, if it is not exists it is created, if exits - it is truncated.
+- `player({string}[, bool/string]) {string/map}`: *underconstruction*.
+- `log_err([any...])`: logs [any...] to the error logging.
+- `log_inf([any...])`: logs [any...] to the info logging.
+- `dictionary() [string]`: returns the name of current dictionary (language).
 
 ## HTTP API
-HTTP requests **http://{IP}:{PORT}/{PATH}?{QUERY}**, where the **{PATH}** can be:
+HTTP requests **http://{IP}:{PORT}/{URI}?{QUERY}**, where the **{URI}** can be:
+- *empty* - HTML - web ui of the ServeMSX
+- **logo.png** - PNG - small logo of ServeMSX
+- **logotype.png** - PNG - wide logotype of ServeMSX
+- **restart** - JSON API - restarts ServeMSX
+- **update** - JSON API - checks updates and updates ServeMSX
+- **settings** - JSON API - sets or reads ServeMSX settings
+- **msx/start.json** - JSON API - start parameter for Media Station X
+- **msx/menu.json** - JSON API - start menu
+- **msx/menu** - JSON API - main menu
+- **msx/dictionary.json** - JSON - returns the current dictionary of ServeMSX
+- **msx/dictionary** - JSON API - dictionary management
+- **msx/input** - JSON API - shows input panel with the keyboard
+- **msx/video/[path]** - JSON API - shows video files
+- **msx/music/[path]** - JSON API - shows music files
+- **msx/photo/[path]** - JSON API - shows photo files
+- **msx/torr** - JSON API - shows my torrents (TorrServer database) and view torrent files through TorrServer
+- **proxy.m3u8** - *undeconstruction*
+- **{plugin}/[path]** - runs the plugin
