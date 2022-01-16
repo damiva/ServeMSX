@@ -143,7 +143,7 @@ srv := import("server")
 - `dictionary() [string]`: returns the name of current dictionary (language).
 
 ## HTTP API
-HTTP requests **http://{IP}:{PORT}/{URI}?{QUERY}**, where the **{URI}** can be:
+HTTP requests **http://{IP}:{PORT}/[URI]?[QUERY]**, where the **[URI]** can be:
 - *empty* - HTML - web ui of the ServeMSX
 - **logo.png** - PNG - small logo of ServeMSX
 - **logotype.png** - PNG - wide logotype of ServeMSX
@@ -155,7 +155,13 @@ HTTP requests **http://{IP}:{PORT}/{URI}?{QUERY}**, where the **{URI}** can be:
 - **msx/menu** - JSON API - main menu
 - **msx/dictionary.json** - JSON - returns the current dictionary of ServeMSX
 - **msx/dictionary** - JSON API - dictionary management
-- **msx/input** - JSON API - shows input panel with the keyboard
+- **msx/input** - JSON API - shows input panel with the keyboard for user inputs. Usage: 
+	- POST request with JSON object in the body with the following properties:
+		- "**action**": *string* (**required**) - action to be executed on input with the result,
+		- "**headline**": *string* (optional) - headline of the panel,
+		- "**extension**": *string* (optional) - extension label of the panel,
+		- "**value**": *string* (optional) - default value of the input
+	- After the user finished the input it runs the "**action**" (POST) with JSON object in the body: `{"data":"reasult text"}`
 - **msx/video/[path]** - JSON API - shows video files
 - **msx/music/[path]** - JSON API - shows music files
 - **msx/photo/[path]** - JSON API - shows photo files
