@@ -29,6 +29,9 @@ func init() {
 				startFocus = ""
 				if d.Info.Dictionary.Name != "" {
 					act = "update:content:dic"
+					if dn := strings.SplitN(d.Info.Dictionary.Name, "/", 2); len(dn) > 1 {
+						d.Info.Dictionary.Name = dn[1]
+					}
 					dat = map[string]string{"extensionLabel": "{txt:msx-white:" + d.Info.Dictionary.Name + "}"}
 				} else {
 					act = "[]"
@@ -57,14 +60,14 @@ func init() {
 		}
 	})
 }
-func getDic() (n, k string, e error) {
+func getDic() (v, n, k string, e error) {
 	var (
-		d struct{ Name, Keyboard string }
+		d struct{ Name, Version, Keyboard string }
 		f *os.File
 	)
 	if f, e = os.Open(pthDic); e == nil {
 		if e = json.NewDecoder(f).Decode(&d); e == nil {
-			n, k = d.Name, d.Keyboard
+			v, n, k = d.Version, strings.Split(d.Name, "/")[0], d.Keyboard
 		} else {
 			e = errors.New("Decoding " + pthDic + " error: " + e.Error())
 		}

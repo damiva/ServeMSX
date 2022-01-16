@@ -15,6 +15,7 @@ type plist struct {
 	Restore  bool                    `json:"restore"`
 	Compress bool                    `json:"compress,omitempty"`
 	Action   string                  `json:"action,omitempty"`
+	Flag     string                  `json:"flag,omitempty"`
 	Head     string                  `json:"headline,omitempty"`
 	Header   plistObj                `json:"header,omitempty"`
 	Ext      string                  `json:"extension,omitempty"`
@@ -30,18 +31,19 @@ func (p *plist) write(w io.Writer) error {
 	j.SetIndent("", "  ")
 	return j.Encode(p)
 }
-func mediaList(r *http.Request, hdr, ext string, vid bool) *plist {
-	i, ps := "movie", playerProp(r.Host, r.FormValue("id"), false)
-	if !vid {
-		i = "audiotrack"
+func mediaList(r *http.Request, hdr, ext, ico string) *plist {
+	id := r.FormValue("id")
+	ps, cmp, lay := playerProp(r.Host, id, false), id != "" && stg.Compress[id], "0,0,12,1"
+	if cmp {
+		lay = "0,0,16,1"
 	}
 	ps["resume:key"] = "url"
 	return &plist{
-		Type: "list", Head: hdr, Ext: ext,
+		Type: "list", Head: hdr, Ext: ext, Compress: cmp,
 		Template: plistObj{
-			"icon":       "msx-white-soft:" + i,
+			"icon":       "msx-white-soft:" + ico,
 			"type":       "control",
-			"layout":     "0,0,12,1",
+			"layout":     lay,
 			"progress":   -1,
 			"live":       map[string]string{"type": "playback", "action": "player:show"},
 			"properties": ps,

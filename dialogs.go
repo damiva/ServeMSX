@@ -33,7 +33,7 @@ func init() {
 			if json.Unmarshal(b, &key) == nil {
 				inputKey(w, id, key.Data)
 			} else if json.Unmarshal(b, &stg) == nil {
-				if _, k, e := getDic(); e == nil {
+				if _, _, k, e := getDic(); e == nil {
 					keyboards[true] = k
 				} else {
 					log.Println(e)

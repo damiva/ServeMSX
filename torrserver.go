@@ -33,7 +33,7 @@ func torrMain(w http.ResponseWriter, r *http.Request) {
 	}
 	check(download("http://"+stg.TorrServer+"/torrents", &d, map[string]string{"action": "list"}))
 	sort.Slice(d, func(i, j int) bool { return d[i].Stat < d[j].Stat })
-	l := &plist{Type: "list", Ext: "{ico:bolt} {txt:msx-white:TorrServer}: " + stg.TorrServer, Template: plistObj{
+	l := &plist{Type: "list", Ext: "{ico:msx-white:bolt} TorrServer: " + stg.TorrServer, Template: plistObj{
 		"imageWidth": 1.25, "layout": "0,0,6,2", "imageFiller": "height-left", "icon": "msx-glass:bolt",
 		"options": plistObj{
 			"headline": "{dic:label:menu|Menu}",
@@ -96,7 +96,7 @@ func torrLink(w http.ResponseWriter, r *http.Request, p string) {
 	}
 	check(download("http://"+stg.TorrServer+"/stream/?stat&link="+url.QueryEscape(p), &t, nil))
 	var as []plistObj
-	l, tu, id := mediaList(r, t.Title, "{ico:msx-white:offline-bolt} "+sizeFormat(t.Torrent_size), true), "http://"+stg.TorrServer+"/stream/", r.FormValue("id")
+	l, tu, id := mediaList(r, t.Title, "{ico:msx-white:offline-bolt} "+sizeFormat(t.Torrent_size), "movie"), "http://"+stg.TorrServer+"/stream/", r.FormValue("id")
 	if t.Active_peers > 0 || t.Total_peers > 0 {
 		l.Ext += "{tb}{ico:msx-white:arrow-upward} " + strconv.Itoa(t.Active_peers) + "/" + strconv.Itoa(t.Total_peers)
 	}
@@ -124,12 +124,16 @@ func torrLink(w http.ResponseWriter, r *http.Request, p string) {
 	}
 	l.Items = append(l.Items, as...)
 	if !r.Form.Has("noadd") {
-		l.Header = plistObj{"items": []plistObj{{
-			"type":   "button",
-			"label":  "{dic:AddTorr|Add to My torrents}",
-			"action": "execute:fetch:http://" + r.Host + "/msx/torr?add=" + url.QueryEscape(p) + "&ttl=" + url.QueryEscape(r.FormValue("ttl")) + "&img=" + url.QueryEscape(r.FormValue("img")),
-			"layout": "4,0,4,1",
-		}}}
+		l.Template["options"] = plistObj{
+			"headline": "{dic:label:menu|Menu}",
+			"caption":  "{dic:label:menu|Menu}:{tb}{ico:msx-green:stop} {dic:AddTorr|Add this torrent to My torrents}",
+			"template": plistObj{"enumerate": false, "type": "control", "layout": "0,0,8,1"},
+			"items": []plistObj{{
+				"key":    "green",
+				"icon":   "msx-green:stop",
+				"label":  "{dic:AddTorr|Add to My torrents}",
+				"action": "execute:fetch:http://" + r.Host + "/msx/torr?add=" + url.QueryEscape(p) + "&ttl=" + url.QueryEscape(r.FormValue("ttl")) + "&img=" + url.QueryEscape(r.FormValue("img")),
+			}}}
 	}
 	l.write(w)
 }

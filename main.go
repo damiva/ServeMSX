@@ -30,6 +30,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 )
@@ -99,10 +100,25 @@ func main() {
 		}
 	}
 	check(stg.load())
-	if e = os.Remove(mypath + ".old"); e == nil {
+	if e = os.Remove(mypath + ".old"); !os.IsNotExist(e) {
 		out.Println(Name, "has been updated!")
-	} else if !os.IsNotExist(e) {
-		log.Println(e)
+		if e != nil {
+			log.Println(e)
+		}
+		if _, n, _, e := getDic(); n != "" {
+			if i, e := gitRelease("", ""); e == nil {
+				for _, a := range i.Assets {
+					if strings.HasSuffix(a.Name, ".json") && strings.HasPrefix(a.Name, n) {
+						check(download(a.Browser_download_url, pthDic, nil))
+						break
+					}
+				}
+			} else {
+				log.Println(e)
+			}
+		} else if e != nil {
+			log.Println(e)
+		}
 	}
 	out.Println(Name, "v.", Vers, "listening at", server.Addr)
 	check(server.ListenAndServe())

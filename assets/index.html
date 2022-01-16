@@ -1,32 +1,94 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <base href="http://192.168.0.2:8008">
         <meta charset="UTF-8">
         <meta name="author" content="damiva">
         <meta name="copyright" content="damiva">    
-        <link rel="shortcut icon" href="/logo.svg" type="image/png">
+        <link rel="shortcut icon" href="/logo.png" type="image/png">
         <title>ServeMSX</title>
+        <style>
+            th, td      {width: 50%}
+            th          {text-align: right; font-weight: normal; white-space: nowrap;}
+            th[colspan] {text-align: center; font-weight: bold; background-color: black; color: white;}
+            input,button{width: 100%; box-sizing: border-box; cursor: pointer;}
+            select      {font-size: inherit;}
+            .ok::before {content: "✓ "; color: darkgreen;}
+            .er::before {content: "✖ ";}
+            .er         {color: darkred; font-weight: bold;}
+        </style>
         <script>
-            function info(){
+            function ajax(data) {
+                var url = "/settings"
                 var x = new XMLHttpRequest();
-                x.onerror = function(){
-                    document.getElementById("inf").innerHTML = this.status + " " + this.statusText;
-                }
+                x.responseType = "json";
+                if(typeof data == "string"){url += "?" + data; data = null;}
+                x.onerror = function(){ document.body.innerHTML = this.status + " " + this.statusText };
                 x.onload = function(){
-                    if(this.status != 200) this.onerror();
-                    else document.getElementById("info").innerHTML = this.responseText;
+                    if(this.status == 200){
+                        ["Version", "Platform"].forEach(e => { if(this.response[e]) document.getElementById(e).innerText = this.response[e]});
+                        ["MemSys", "MemAlloc"].forEach(e => { document.getElementById(e).innerText = Math.round(this.response[e] / 1024) });
+                        ["TorrServer", "Video", "Music", "Photo"].forEach(e => { document.getElementById(e).value = this.response[e] || ""});
+                        document.getElementById("Plugins").innerHTML = this.response.Plugins.map(
+                            p => "<option class='" + (p.Error ? "er" : "ok") + "'>" + p.Name + ": " + (p.Error || p.Label) + "</option>"
+                        ).join("");
+                        document.getElementById("DEL").disabled = true;
+                    } else alert(this.responseText);
                 }
-                x.open("GET", "/settings");
-                x.send();
+                x.open(data ? "POST" : "GET", url);
+                x.send(data ? JSON.stringify(data) : null);
             }
-            function msx(){
-                window.location.href = "http://msx.benzac.de/?start=menu:" + window.location.href + "msx/menu.json"
+            function language(){
+                var lng = document.getElementById("lang").value;
+                document.querySelectorAll("[lang]").forEach(e => {e.hidden = e.lang != lng});
+            }
+            function input(e) {
+                var p = prompt(e.dataset[document.getElementById("lang").value], e.value);
+                if(p !== null || p === "" && e.dataset.empty) switch(e.id) {
+                    case "Video": ajax("video=" + encodeURIComponent(p)); break;
+                    case "Music": ajax("music=" + encodeURIComponent(p)); break;
+                    case "Photo": ajax("photo=" + encodeURIComponent(p)); break;
+                    case "TorrServer": ajax({data: p});
+                }
+            }
+            function pluginDel(){ ajax("plugin=" + encodeURIComponent(document.getElementById("Plugins").value)) }
+            async function pluginAdd(){
+                let formData = new FormData(); 
+                formData.append("file", ADD.files[0]);
+                await fetch('/install', {
+                    method: "POST", 
+                    body: formData
+                }); 
+            }
+            function start(){
+                document.getElementById("lang").value = navigator.language.substr(0,2) == "ru" ? "ru" : "en";
+                language();
+                ajax();
             }
         </script>
     </head>
-    <body onload="info()">
-        <h1>UNDERCONSTRUCTION!</h1>
-        <button onclick="msx()">Media Station X</button>
-        <p id="inf">Info:<br><pre id="info"></pre></p>
+    <body style="font-family: Arial, Helvetica, sans-serif; margin: 1em auto 1em auto; width: max-content;" onload="start();">
+        <table style="border: 1px solid black; border-collapse: collapse;">
+            <caption style="background-color: black; color: white; text-align: left; padding: .5em .5em 0 .5em;">
+                <img src="/logotype.png" style="height:3em;vertical-align: text-top;"> v. <span id="Version"></span>
+                <select id="lang" style="float: right; background-color: black; color: white; border: none;" onchange="language()"><option>ru</option><option>en</option></select>    
+            </caption>
+            <tr><th><span lang="en">Platform</span><span lang="ru">Платформа</span>:</th><td id="Platform"></td></tr>
+            <tr><th><span lang="en">Memosy used</span><span lang="ru">Используется памяти</span>:</th><td><span id="MemAlloc"></span> / <span id="MemSys"></span> KB</td></tr>
+            <tr><th colspan="2"><span lang="en">Settings</span><span lang="ru">Настройки</span>:</th></tr>    
+            <tr><th>TorrServer:</th><td><input id="TorrServer" readonly data-ru="Введите адрес TorrServer:" data-en="Enter the address of TorrServer:" data-empty=true onclick="input(this)"></td></tr>
+            <tr><th><span lang="en">My video</span><span lang="ru">Моё видео</span>:</th><td><input id="Video" readonly data-ru="Введите путь к видео файлам:" data-en="Enter the path to video files:" onclick="input(this)"></td></tr>
+            <tr><th><span lang="en">My music</span><span lang="ru">Моя музыка</span>:</th><td><input id="Music" readonly data-ru="Введите путь к файлам с музыкой:" data-en="Enter the path to music files:" onclick="input(this)"></td></tr>
+            <tr><th><span lang="en">My photo</span><span lang="ru">Мои фотографии</span>:</th><td><input id="Photo" readonly data-ru="Введите путь к фото файлам:" data-en="Enter the path to photo files:" onclick="input(this)"></td></tr>
+            <tr><th colspan="2"><span lang="en">Plugins</span><span lang="ru">Плагины</span>:</th></tr>    
+            <tr><td colspan="2" style="text-align: center;">
+                <select id="Plugins" size="10" style="width: 100%;" onchange="document.getElementById('DEL').disabled = false;"></select>
+            </td></tr>
+            <tr>
+                <td><input id="ADD" type="file" name="plugin" onchange="pluginAdd()"></td>
+                <td><button id="DEL" onclick="pluginDel()" disabled><span lang="en">Remove the plugin</span><span lang="ru">Удалить плагин</span></button></td>
+            </tr>
+            <tr><th colspan="2" style="font-size: smaller; font-weight: normal;">© 2022 damiva</td></tr>
+        </table>
     </body>
 </html>

@@ -25,7 +25,7 @@ type pluginf struct {
 type pluginfo struct {
 	pluginf
 	Name  string
-	Error error `json:",omitempty"`
+	Error string `json:",omitempty"`
 }
 
 var plugMemory = make(map[string]tengo.Object)
@@ -45,8 +45,11 @@ func plugsInfo() (ps []pluginfo, er error) {
 	if d, er = ioutil.ReadDir(pthPlugs); er == nil {
 		for _, f := range d {
 			if n := f.Name(); f.IsDir() {
-				p, e := plugInfo(n)
-				ps = append(ps, pluginfo{p, n, e})
+				if p, e := plugInfo(n); e != nil {
+					ps = append(ps, pluginfo{p, n, e.Error()})
+				} else {
+					ps = append(ps, pluginfo{p, n, ""})
+				}
 			}
 		}
 	} else if os.IsNotExist(er) {
@@ -215,7 +218,7 @@ func tengoFile(pth string) func(...tengo.Object) (tengo.Object, error) {
 func tengoDic(args ...tengo.Object) (tengo.Object, error) {
 	if len(args) != 0 {
 		return nil, tengo.ErrWrongNumArguments
-	} else if n, _, e := getDic(); e != nil {
+	} else if _, n, _, e := getDic(); e != nil {
 		return &tengo.Error{Value: &tengo.String{Value: e.Error()}}, nil
 	} else {
 		return &tengo.String{Value: n}, nil

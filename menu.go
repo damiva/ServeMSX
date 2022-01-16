@@ -48,7 +48,7 @@ func init() {
 		if ps, e := plugsInfo(); e == nil {
 			ml := len(l.Menu)
 			for _, p := range ps {
-				if p.Error == nil {
+				if p.Error == "" {
 					if !p.Torrent || stg.TorrServer != "" {
 						m := plistObj{"label": p.Label}
 						if p.Label == "" {
@@ -73,8 +73,12 @@ func init() {
 			}
 		}
 		ts := started.UnixMilli()
+		lst := "{txt:msx-white:dic:Default|default} {ico:msx-white:toggle-off} {dic:Compress|compressed}"
+		if stg.Compress[id] {
+			lst = "{dic:Default|default} {col:msx-white}{ico:toggle-on} {dic:Compress|compressed}"
+		}
 		l.Menu = append(l.Menu, plistObj{"id": "stg", "icon": "settings", "label": "{dic:label:settings|Settings}",
-			"data": map[string][]map[string][]plistObj{"pages": {{"items": {
+			"data": plistObj{"extension": "{ico:msx-white:settings}", "pages": []map[string][]plistObj{{"items": {
 				{"type": "space", "layout": "0,0,12,2", "image": u + "/logotype.png", "imageFiller": "height", "imageWidth": 7, "imagePreload": true,
 					"headline":    "{txt:msx-white-soft:dic:label:version|Version} " + Vers,
 					"titleHeader": "", "titleFooter": "{ico:http}{tb}{txt:msx-white:" + r.Host +
@@ -82,11 +86,11 @@ func init() {
 						"}{br}{ico:web}{tb}{txt:msx-white:https://github.com/" + gitRepo + "}",
 					"live": plistObj{"type": "schedule", "from": ts, "to": ts, "titleHeader": "{ico:timer}{tb}{txt:msx-white:overflow:text:dhms}"}},
 				{"type": "space", "layout": "0,2,12,1", "text": "{txt:msx-white:" + Name + "} {dix:About}is a software for playing user's content and developing user's plugins.{br}It does not provide any video/audio content by itself!", "alignment": "center"},
-				{"id": "dic", "type": "control", "layout": "0,3,6,1", "icon": "translate", "label": "{dic:Language|Language}:", "extensionLabel": "default", "action": "panel:" + u + "/msx/dictionary", "live": map[string]string{"type": "setup", "action": "execute:service:info:dictionary:" + u + "/msx/dictionary"}},
-				{"type": "control", "layout": "0,4,6,1", "icon": "bolt", "label": "TorrServer:", "extensionLabel": ta, "action": "execute:" + u + "/settings", "data": true},
-				{"type": "control", "layout": "0,5,6,1", "icon": "smart-display", "label": "{dic:label:player|Player}:", "extensionLabel": pls, "action": "execute:" + u + "/settings?id={ID}", "data": false},
-				{"type": "control", "layout": "6,3,6,1", "label": "{dic:CheckUp|Check updates}", "icon": "system-update-alt", "action": "execute:fetch:" + u + "/update"},
-				{"type": "control", "layout": "6,4,6,1", "label": "{dic:label:restart|Restart} " + Name, "icon": "refresh", "action": "execute:fetch:" + u + "/restart"},
+				{"id": "update", "type": "control", "layout": "0,3,6,1", "label": "{dic:CheckUp|Check updates}", "icon": "system-update-alt", "action": "execute:fetch:" + u + "/update"},
+				{"type": "control", "layout": "0,4,6,1", "icon": "smart-display", "label": "{dic:label:player|Player}:", "extensionLabel": pls, "action": "execute:" + u + "/settings?id={ID}", "data": 1},
+				{"type": "control", "layout": "0,5,6,1", "label": "{dic:Files|List of files}:", "icon": "format-list-bulleted", "extensionLabel": lst, "action": "execute:" + u + "/settings?id={ID}", "data": 2},
+				{"id": "dic", "type": "control", "layout": "6,3,6,1", "icon": "language", "label": "{dic:Language|Language}:", "extensionLabel": "default", "action": "panel:" + u + "/msx/dictionary", "live": map[string]string{"type": "setup", "action": "execute:service:info:dictionary:" + u + "/msx/dictionary"}},
+				{"type": "control", "layout": "6,4,6,1", "icon": "bolt", "label": "TorrServer:", "extensionLabel": ta, "action": "execute:" + u + "/settings", "data": nil},
 				{"type": "control", "layout": "6,5,6,1", "label": "{dic:label:application|Application}", "icon": "monitor", "extensionIcon": "menu-open", "action": "dialog:application"},
 			}}}}})
 		l.write(w)

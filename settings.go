@@ -20,17 +20,13 @@ type recentItem struct {
 }
 */
 type settings struct {
-	TorrServer string
-	//CheckUpdate int64
-	HTML5X map[string]bool
-	//Plugins     map[string]string
-	//Recent      map[string]recentItem
-	//toSave      bool
+	TorrServer               string
+	HTML5X, Compress, Photos map[string]bool
 }
 type client struct{ Addr, Platform, Player, Vers string }
 
 var (
-	stg     = &settings{HTML5X: make(map[string]bool)}
+	stg     = &settings{"", make(map[string]bool), make(map[string]bool), make(map[string]bool)}
 	clients = make(map[string]client)
 )
 
@@ -71,17 +67,37 @@ func (s *settings) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			d interface{}
 		)
 		check(json.NewDecoder(r.Body).Decode(&i))
+		out.Printf("%v\t%T\t%v", i, i.Data, i.Data)
+		out.Println(s.Compress, s.HTML5X)
 		switch v := i.Data.(type) {
 		case string:
 			a, d = s.setTorr(v)
 			check(s.save())
-		case bool:
-			if v {
-				a, d = s.inputTorr(r.Host)
-			} else {
-				a, d = s.switchPlayer(r.URL.Query().Get("id"))
-				check(s.save())
+		case float64:
+			id := r.URL.Query().Get("id")
+			switch v {
+			case 1:
+				s.HTML5X[id] = !s.HTML5X[id]
+			case 2:
+				s.Compress[id] = !s.Compress[id]
+			case 3:
+				s.Photos[id] = !s.Photos[id]
 			}
+			check(s.save())
+			a = "reload:menu"
+		case map[string]interface{}:
+			for _, k := range [3]string{pthVideo, pthMusic, pthPhoto} {
+				if s, o := v[k].(string); o {
+					if s == "" {
+						check(os.Remove(k))
+					} else {
+						check(os.Symlink(s, k))
+					}
+				}
+			}
+			a = "info:OK"
+		default:
+			a, d = s.inputTorr(r.Host)
 		}
 		svcAnswer(w, a, d)
 	} else {
@@ -102,10 +118,6 @@ func (s *settings) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		j.SetIndent("", "  ")
 		j.Encode(&i)
 	}
-}
-func (s *settings) switchPlayer(id string) (string, interface{}) {
-	s.HTML5X[id] = !s.HTML5X[id]
-	return "reload:menu", nil
 }
 func (s *settings) setTorr(t string) (a string, d interface{}) {
 	if v, e := checkTorr(t); e != nil {

@@ -12,7 +12,7 @@ import (
 
 const (
 	pthVideo, pthMusic, pthPhoto = "video", "music", "photo"
-	extVid, extAud, extPic       = ".avi.mp4.mkv.mpeg.mpg.m4v.mp2.webm.ts.mts.m2ts.mov.wmv.flv", ".mp3.m4a.flac.wav.wma.aac", ".jpg.png"
+	extVid, extAud, extPic       = ".avi.mp4.mkv.mpeg.mpg.m4v.mp2.webm.ts.mts.m2ts.mov.wmv.flv", ".mp3.m4a.flac.wav.wma.aac.ogg", ".jpg.png"
 )
 
 func init() {
@@ -42,18 +42,41 @@ func files(w http.ResponseWriter, r *http.Request) {
 		id := r.FormValue("id")
 		switch t = p[0]; t {
 		case 'p':
-			ext, l, z = extPic, &plist{Type: "list", Head: f.Name(), Ext: "{ico:photo-library}", Template: plistObj{"imageFiller": "smart", "layout": "0,0,3,2"}}, "headline"
+			lst := "{ico:format-list-numbered}"
+			ext = extPic
+			if stg.Photos[id] {
+				z, l = "headline", &plist{
+					Type: "list", Head: f.Name(), Ext: "{ico:msx-white:photo-library}",
+					Compress: id != "" && stg.Compress[id],
+					Template: plistObj{"imageFiller": "smart", "layout": "0,0,3,2"},
+				}
+				lst = "{ico:apps}"
+			} else {
+				l = mediaList(r, f.Name(), "{ico:msx-white:photo-library}", "image")
+			}
+			l.Flag = "photo"
+			l.Template["options"] = plistObj{
+				"headline": "{dic:label:menu|Menu}",
+				"caption":  "{dic:label:menu|Menu}:{tb}{ico:msx-green:stop} {dic:Files|List of files}: " + lst,
+				"template": plistObj{"enumerate": false, "type": "control", "layout": "0,0,8,1"},
+				"items": []plistObj{{
+					"key":    "green",
+					"icon":   "msx-green:stop",
+					"label":  "{dic:Files|List of files}: " + lst,
+					"action": "execute:http://" + r.Host + "/settings?id={ID}",
+					"data":   3,
+				}}}
 		case 'm':
-			l, ext = mediaList(r, f.Name(), "{ico:library-music}", false), extAud
+			l, ext = mediaList(r, f.Name(), "{ico:msx-white:library-music}", "audiotrack"), extAud
 		default:
-			l, ext = mediaList(r, f.Name(), "{ico:video-library}", true), extVid
+			l, ext = mediaList(r, f.Name(), "{ico:msx-white:video-library}", "movie"), extVid
 		}
 		for _, f := range fs {
 			n := f.Name()
 			x, u := strings.ToLower(filepath.Ext(n)), "http://"+r.Host+r.URL.EscapedPath()+url.PathEscape(n)
 			switch {
 			case f.IsDir():
-				l.Items = append(l.Items, plistObj{"icon": "msx-yellow:folder", z: n, "action": "content:" + u + "/"})
+				l.Items = append(l.Items, plistObj{"icon": "msx-yellow:folder", z: n, "action": "content:" + u + "/?id={ID}"})
 			case x == ".torrent":
 				if t != 'p' && stg.TorrServer != "" {
 					ts = append(ts, plistObj{"icon": "msx-yellow:offline-bolt", z: n, "action": "content:http://" + r.Host + "/msx/torr?id={ID}&link=" + url.QueryEscape(u)})
@@ -61,7 +84,10 @@ func files(w http.ResponseWriter, r *http.Request) {
 			case strings.Contains(ext, x):
 				i := plistObj{z: n, "playerLabel": n, "extensionLabel": sizeFormat(f.Size())}
 				if t == 'p' {
-					i["image"], i["action"] = u, "image:"+u
+					i["action"] = "image:" + u
+					if stg.Photos[id] {
+						i["image"] = u
+					}
 				} else {
 					i["action"] = playerURL(id, u, t == 'v')
 				}
