@@ -143,28 +143,17 @@ srv := import("server")
 - `dictionary() [string]`: returns the name of current dictionary (language).
 
 ## HTTP API
-HTTP requests **http://{IP}:{PORT}/[URI]?[QUERY]**, where the **[URI]** can be:
-- *empty* - HTML - web ui of the ServeMSX
-- **logo.png** - PNG - small logo of ServeMSX
-- **logotype.png** - PNG - wide logotype of ServeMSX
-- **restart** - JSON API - restarts ServeMSX
-- **update** - JSON API - checks updates and updates ServeMSX
-- **settings** - JSON API - sets or reads ServeMSX settings
-- **msx/start.json** - JSON API - start parameter for Media Station X
-- **msx/menu.json** - JSON API - start menu
-- **msx/menu** - JSON API - main menu
-- **msx/dictionary.json** - JSON - returns the current dictionary of ServeMSX
-- **msx/dictionary** - JSON API - dictionary management
-- **msx/input** - JSON API - shows input panel with the keyboard for user inputs. Usage: 
-	- POST request with JSON object in the body with the following properties:
-		- "**action**": *string* (**required**) - action to be executed on input with the result,
-		- "**headline**": *string* (optional) - headline of the panel,
-		- "**extension**": *string* (optional) - extension label of the panel,
-		- "**value**": *string* (optional) - default value of the input
-	- After the user finished the input it runs the "**action**" (POST) with JSON object in the body: `{"data":"reasult text"}`
-- **msx/video/[path]** - JSON API - shows video files
-- **msx/music/[path]** - JSON API - shows music files
-- **msx/photo/[path]** - JSON API - shows photo files
-- **msx/torr** - JSON API - shows my torrents (TorrServer database) and view torrent files through TorrServer
-- **proxy.m3u8** - *undeconstruction*
-- **{plugin}/[path]** - runs the plugin
+HTTP requests http://{IP}:{PORT}/**[URI]**, where the **[URI]** can be:
+|[URI]		|Request Method	|Parameters<br>(bold are required)	|Answer type	|Description|
+| :---:   	| :---:	| :---:	| :---:   | :---:   |
+|		|GET	| |HTML	|Web-UI of ServeMSX|
+|logo.png	|GET	| |PNG	|Small logo of ServeMSX|
+|logotype.png	|GET	| |PNG	|Wide logotype of ServeMSX|
+|restart	|GET	| |JSON	|Restarts ServeMSX|
+|settings	|GET	| |JSON	|Returns ServeMSX settings|
+|msx/dictionary.json|GET| |JSON	|Returns the current dictionary of ServeMSX|
+|msx/video/[path]	|GET	| |JSON	|Returns the content of video folder (My video)|
+|msx/music/[path]	|GET	| |JSON	|Returns the content of music folder (My music)|
+|msx/photo/[path]	|GET	| |JSON	|Returns the content of photo folder (My photo)|
+|msx/torr	|GET	|link=*url/magnet/hash*<br>ttl=*title*<br>img=*url*	|JSON	|If *link* is not set, returns the content of TorrServer's torrents (My torrents).<br>If *link* is set, returns the content of the torrent, if *ttl* & *img* are set, the title and url to poster will be added if user press "Add torrent to My torrents" (yellow) button.|
+|msx/input	|POST	|JSON object with properties:<br>**"action":"*string*"**,<br>"headline":"*string*",<br>"extension":"*string*",<br>"value":"*string*"	|JSON	|Returns a panel with keyboard asking user to enter a text. Afer user entered the text it executes the "action" with POST request with JSON: `{"data":"text"}`|
