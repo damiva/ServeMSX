@@ -36,13 +36,13 @@ func init() {
 		l := &plist{Logo: u + "/logotype.png", Menu: []plistObj{ /*{"icon": "history", "label": "{dic:Recent|Continue}...", "data": u + "/msx/recent?id={ID}"}*/ }}
 		for _, f := range [3][2]string{{pthVideo, "video-library"}, {pthMusic, "library-music"}, {pthPhoto, "photo-library"}} {
 			if _, e := os.Stat(f[0]); !os.IsNotExist(e) {
-				l.Menu = append(l.Menu, plistObj{"icon": f[1], "label": "{dix:" + f[0] + "}My " + f[0], "data": u + "/msx/" + f[0] + "/?id={ID}"})
+				l.Menu = append(l.Menu, plistObj{"icon": f[1], "extensionIcon": "folder-open", "label": "{dix:" + f[0] + "}My " + f[0], "data": u + "/msx/" + f[0] + "/?id={ID}"})
 			}
 		}
 		ta := "{dic:label:none|None}"
 		if stg.TorrServer != "" {
 			ta = "{col:msx-white}" + stg.TorrServer
-			l.Menu = append(l.Menu, plistObj{"icon": "bolt", "label": "{dic:Torrents|My torrents}", "data": u + "/msx/torr?id={ID}"})
+			l.Menu = append(l.Menu, plistObj{"image": "http://" + stg.TorrServer + "/apple-touch-icon.png", "extensionIcon": "bolt", "label": "{dic:Torrents|My torrents}", "data": u + "/msx/torr?id={ID}"})
 		}
 		l.Menu = append(l.Menu, plistObj{"type": "separator"})
 		if ps, e := plugsInfo(); e == nil {
@@ -51,6 +51,11 @@ func init() {
 				if p.Error == "" {
 					if !p.Torrent || stg.TorrServer != "" {
 						m := plistObj{"label": p.Label}
+						if p.Torrent {
+							m["extensionIcon"] = "bolt"
+						} else {
+							m["extensionIcon"] = "http"
+						}
 						if p.Label == "" {
 							m["label"] = p.Name
 						}

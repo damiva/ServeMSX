@@ -12,13 +12,6 @@ import (
 
 const pthSettings = "settings.json"
 
-/*
-type recentItem struct {
-	Lbl, Ref, Img string
-	Pos, Dur, Lts int64
-	Vid           bool
-}
-*/
 type settings struct {
 	TorrServer               string
 	HTML5X, Compress, Photos map[string]bool
@@ -67,11 +60,9 @@ func (s *settings) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			d interface{}
 		)
 		check(json.NewDecoder(r.Body).Decode(&i))
-		out.Printf("%v\t%T\t%v", i, i.Data, i.Data)
-		out.Println(s.Compress, s.HTML5X)
 		switch v := i.Data.(type) {
 		case string:
-			a, d = s.setTorr(v)
+			a, d = s.setTorr(v, !r.URL.Query().Has("v"))
 			check(s.save())
 		case float64:
 			id := r.URL.Query().Get("id")
@@ -88,9 +79,14 @@ func (s *settings) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case map[string]interface{}:
 			for _, k := range [3]string{pthVideo, pthMusic, pthPhoto} {
 				if s, o := v[k].(string); o {
-					if s == "" {
-						check(os.Remove(k))
-					} else {
+					if e := os.Remove(k); e != nil && !os.IsNotExist(e) {
+						panic(e)
+					} else if s != "" {
+						if i, e := os.Stat(s); e != nil {
+							panic(e)
+						} else if !i.IsDir() {
+							panic(s + " is not a directory!")
+						}
 						check(os.Symlink(s, k))
 					}
 				}
@@ -104,25 +100,32 @@ func (s *settings) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		m := new(runtime.MemStats)
 		runtime.ReadMemStats(m)
 		i := struct {
-			Name, Version, Up, Platform string
-			MemSys, MemAlloc            uint64
-			Plugins                     interface{}
+			Name, Version, Up, Platform, Video, Music, Photo string
+			MemSys, MemAlloc                                 uint64
+			Plugins                                          interface{}
 			*settings
-		}{Name, Vers, (time.Since(started) / time.Second * time.Second).String(), runtime.GOOS + "/" + runtime.GOARCH, m.Sys, m.Alloc, nil, stg}
+		}{Name, Vers, (time.Since(started) / time.Second * time.Second).String(), runtime.GOOS + "/" + runtime.GOARCH, "", "", "", m.Sys, m.Alloc, nil, stg}
 		if p, e := plugsInfo(); e == nil {
 			i.Plugins = p
 		} else {
 			i.Plugins = e.Error()
 		}
+		i.Video, _ = os.Readlink(pthVideo)
+		i.Music, _ = os.Readlink(pthMusic)
+		i.Photo, _ = os.Readlink(pthPhoto)
 		j := json.NewEncoder(w)
 		j.SetIndent("", "  ")
 		j.Encode(&i)
 	}
 }
-func (s *settings) setTorr(t string) (a string, d interface{}) {
+func (s *settings) setTorr(t string, err bool) (a string, d interface{}) {
 	if v, e := checkTorr(t); e != nil {
-		a = "error:" + e.Error()
 		s.TorrServer = ""
+		if err {
+			panic(e)
+		} else {
+			a = "error:" + e.Error()
+		}
 	} else {
 		if v == "" {
 			v = "success:TorrServer: {dic:label:none|None}"

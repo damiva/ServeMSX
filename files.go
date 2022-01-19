@@ -12,7 +12,7 @@ import (
 
 const (
 	pthVideo, pthMusic, pthPhoto = "video", "music", "photo"
-	extVid, extAud, extPic       = ".avi.mp4.mkv.mpeg.mpg.m4v.mp2.webm.ts.mts.m2ts.mov.wmv.flv", ".mp3.m4a.flac.wav.wma.aac.ogg", ".jpg.png"
+	extVid, extAud, extPic       = ".avi.mp4.mkv.mpeg.mpg.m4v.mp2.webm.ts.mts.m2ts.mov.wmv.flv", ".mp3.m4a.flac.wav.wma.aac.ogg", ".jpg.jpeg.png"
 )
 
 func init() {
@@ -42,17 +42,17 @@ func files(w http.ResponseWriter, r *http.Request) {
 		id := r.FormValue("id")
 		switch t = p[0]; t {
 		case 'p':
-			lst := "{ico:format-list-numbered}"
+			lst := "{ico:apps}"
 			ext = extPic
 			if stg.Photos[id] {
 				z, l = "headline", &plist{
-					Type: "list", Head: f.Name(), Ext: "{ico:msx-white:photo-library}",
+					Type: "list", Head: "{ico:msx-white-soft:folder-open} " + f.Name(), Ext: "{ico:msx-white:photo-library}",
 					Compress: id != "" && stg.Compress[id],
 					Template: plistObj{"imageFiller": "smart", "layout": "0,0,3,2"},
 				}
-				lst = "{ico:apps}"
+				lst = "{ico:format-list-numbered}"
 			} else {
-				l = mediaList(r, f.Name(), "{ico:msx-white:photo-library}", "image")
+				l = mediaList(r, "{ico:msx-white-soft:folder-open} "+f.Name(), "{ico:msx-white:photo-library}", "image")
 			}
 			l.Flag = "photo"
 			l.Template["options"] = plistObj{
@@ -67,9 +67,9 @@ func files(w http.ResponseWriter, r *http.Request) {
 					"data":   3,
 				}}}
 		case 'm':
-			l, ext = mediaList(r, f.Name(), "{ico:msx-white:library-music}", "audiotrack"), extAud
+			l, ext = mediaList(r, "{ico:msx-white-soft:folder-open} "+f.Name(), "{ico:msx-white:library-music}", "audiotrack"), extAud
 		default:
-			l, ext = mediaList(r, f.Name(), "{ico:msx-white:video-library}", "movie"), extVid
+			l, ext = mediaList(r, "{ico:msx-white-soft:folder-open} "+f.Name(), "{ico:msx-white:video-library}", "movie"), extVid
 		}
 		for _, f := range fs {
 			n := f.Name()

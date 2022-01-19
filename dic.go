@@ -37,7 +37,7 @@ func init() {
 					act = "[]"
 				}
 			} else if d.Data != "" {
-				check(download(d.Data, pthDic, nil))
+				check(download(d.Data, pthDic, true))
 			} else if e := os.Remove(pthDic); e != nil && !os.IsNotExist(e) {
 				panic(e)
 			}
@@ -47,7 +47,7 @@ func init() {
 			i, e := gitRelease("", Vers)
 			check(e)
 			for _, a := range i.Assets {
-				if strings.HasSuffix(a.Name, ".json") {
+				if strings.HasSuffix(a.Name, ".json.gz") {
 					ds = append(ds, plistObj{"label": strings.TrimSuffix(a.Name, ".json"), "data": a.Browser_download_url})
 				}
 			}

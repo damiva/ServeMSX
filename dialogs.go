@@ -59,8 +59,8 @@ func init() {
 		}
 		svcAnswer(w, "panel:data", &plist{Head: dat.Data.Headline, Ext: dat.Data.Extension, Pages: []map[string][]plistObj{{"items": {
 			{"type": "space", "headline": dat.Data.Value, "layout": "0,0,8,6", "alignment": "center"},
-			{"type": "button", "icon": "done", "layout": "4,5,2,1", "action": dat.Data.Action, "display": dat.Data.Action != ""},
-			{"type": "button", "icon": "close", "layout": "6,5,2,1", "action": "back"},
+			{"type": "button", "icon": "done", "layout": "0,5,4,1", "action": dat.Data.Action, "display": dat.Data.Action != ""},
+			{"type": "button", "icon": "close", "layout": "4,5,4,1", "action": "back"},
 		}}}})
 	})
 }

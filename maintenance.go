@@ -1,15 +1,18 @@
 package main
 
 import (
+	"archive/tar"
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
 	"errors"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 )
@@ -23,7 +26,12 @@ type gitrelease struct {
 
 func init() {
 	http.HandleFunc("/update", func(w http.ResponseWriter, r *http.Request) {
-		if u := r.URL.Query().Get("link"); u != "" {
+		if u := r.FormValue("link"); u != "" {
+			if d := r.FormValue("dic"); d != "" {
+				if e := download(d, pthDic, true); e != nil {
+					log.Println(e)
+				}
+			}
 			check(download(u, mypath+".new", nil))
 			check(os.Chmod(mypath+".new", 0777))
 			mutex.Lock()
@@ -40,20 +48,71 @@ func init() {
 			i, e := gitRelease("", "")
 			check(e)
 			if i.Tag_name != Vers {
-				n := strings.Join([]string{Name, runtime.GOOS, runtime.GOARCH}, "-")
+				n, as := strings.Join([]string{Name, runtime.GOOS, runtime.GOARCH}, "-"), []string{"", ""}
+				_, l, _, _ := getDic()
 				for _, a := range i.Assets {
-					if strings.HasPrefix(a.Name, n) {
-						svcAnswer(w, "execute:http://"+r.Host+"/msx/dialog", dialogStg{
-							"execute:fetch:http://" + r.Host + "/update?link=" + url.QueryEscape(a.Browser_download_url),
-							"{dic:CheckUp|Check updates}:",
-							Name,
-							"{dic:HasUpdate|There are updates}:{br}" + Name + " {dic:label:version|Version} " + i.Tag_name + "{br}{br}{dix:Update}Would you like to update?",
-						})
-						return
+					if strings.HasSuffix(a.Name, ".json.gz") {
+						if l != "" {
+							as[1] = url.QueryEscape(a.Browser_download_url)
+						}
+					} else if strings.HasPrefix(a.Name, n) {
+						as[0] = url.QueryEscape(a.Browser_download_url)
 					}
+				}
+				if as[0] != "" {
+					svcAnswer(w, "execute:http://"+r.Host+"/msx/dialog", dialogStg{
+						"execute:fetch:http://" + r.Host + "/update?link=" + strings.Join(as, "&dic="),
+						"{dic:CheckUp|Check updates}:",
+						Name,
+						"{dic:HasUpdate|There are updates}:{br}" + Name + " {dic:label:version|Version} " + i.Tag_name + "{br}{br}{dix:Update}Would you like to update?",
+					})
+					return
 				}
 			}
 			svcAnswer(w, "info:{dic:NoUpdate|There are no updates!}", nil)
+		}
+	})
+	http.HandleFunc("/install", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			panic(404)
+		} else if p := r.FormValue("remove"); p != "" {
+			check(os.RemoveAll(filepath.Join(pthPlugs, p)))
+		} else if f, fh, e := r.FormFile("file"); e != nil {
+			panic(e)
+		} else {
+			defer f.Close()
+			if filepath.Ext(fh.Filename) != ".tgz" {
+				panic(400)
+			}
+			p = filepath.Join(pthPlugs, strings.SplitN(fh.Filename, ".", 2)[0])
+			os.RemoveAll(p)
+			check(os.MkdirAll(p, 0777))
+			z, e := gzip.NewReader(f)
+			check(e)
+			defer z.Close()
+			t := tar.NewReader(z)
+			var h *tar.Header
+			for {
+				if h, e = t.Next(); e == nil {
+					pp := filepath.Join(p, h.Name)
+					switch h.Typeflag {
+					case tar.TypeDir:
+						e = os.MkdirAll(pp, 0777)
+					case tar.TypeReg:
+						var ff *os.File
+						if ff, e = os.Create(pp); e == nil {
+							_, e = io.Copy(ff, t)
+							ff.Close()
+						}
+					}
+				}
+				if e != nil {
+					break
+				}
+			}
+			if e != nil && e != io.EOF {
+				panic(e)
+			}
 		}
 	})
 }
@@ -128,97 +187,3 @@ func gitRelease(repo, tag string) (info *gitrelease, err error) {
 	err = download("https://api.github.com/repos/"+repo+"/releases/"+tag, info, http.Header{"Accept": {"application/vnd.github.v3+json"}})
 	return
 }
-
-/*
-func checkUpdate(r *http.Request) (string, interface{}) {
-	var ups [][3]string
-	i, e := gitRelease("", "")
-	check(e)
-	if i.Tag_name != Vers {
-		n := strings.Join([]string{Name, runtime.GOOS, runtime.GOARCH}, "-")
-		for _, a := range i.Assets {
-			if strings.HasPrefix(a.Name, n) {
-				ups = append(ups, [3]string{Name, i.Tag_name, a.Browser_download_url})
-			}
-		}
-	}
-	for p, t := range stg.Plugins {
-		if i, e := gitRelease(p, ""); e != nil {
-			log.Println(e)
-		} else if i.Tag_name != t {
-			ups = append(ups, [3]string{p, i.Tag_name, i.Tarball_url})
-		}
-	}
-	if len(ups) > 0 {
-		dat := dialogStg{Action: "execute:fetch:http://" + r.Host + "/update?", Headline: "{dic:HasUpdate|There is an update}:", Extension: "{ico:system-update-alt}"}
-		for _, u := range ups {
-			dat.Action += "link=" + url.QueryEscape(u[2]) + "&name=" + url.QueryEscape(u[0]) + "&tag=" + url.QueryEscape(u[1]) + "&"
-			dat.Value += u[0] + " {dic:label:version|Version}: " + u[1] + "{br}"
-		}
-		dat.Value += "{br}{dix:Update}Would you like to update (the application will be reloaded)?"
-		return "execute:http://" + r.Host + "/msx/dialog", dat
-	}
-	return "info:{dic:NoUpdate|There is no update}!", nil
-}
-func update(r *http.Request, url, src, tag string) (string, interface{}) {
-	if src == "" {
-		check(download(url, mypath+".new", nil))
-		mutex.Lock()
-		defer mutex.Unlock()
-		check(os.Rename(mypath, mypath+".old"))
-		if e := os.Rename(mypath+".new", mypath); e != nil {
-			os.Rename(mypath+".old", mypath)
-			panic(e)
-		}
-		return "execute:fetch:http://" + r.Host + "/restart", nil
-	} else {
-		check(download(url, filepath.Join(pthPlugs, pthInstPlug), true))
-		mutex.Lock()
-		defer mutex.Unlock()
-		check(untar(pthInstPlug, ""))
-		stg.Plugins[src] = tag
-		return "reload:menu", nil
-	}
-}
-func untar(src, dst string) (e error) {
-	p := filepath.Join(pthPlugs, dst)
-	if e = os.MkdirAll(p, 0777); e == nil {
-		var f *os.File
-		if f, e = os.Open(src); e == nil {
-			var h *tar.Header
-			t := tar.NewReader(f)
-			for {
-				if h, e = t.Next(); e == nil {
-					pp := filepath.Join(p, h.Name)
-					switch h.Typeflag {
-					case tar.TypeDir:
-						e = os.MkdirAll(pp, 0777)
-					case tar.TypeReg:
-						var ff *os.File
-						if ff, e = os.Create(pp); e == nil {
-							_, e = io.Copy(ff, t)
-							ff.Close()
-						}
-					}
-				} else if e == io.EOF {
-					e = nil
-					break
-				}
-				if e != nil {
-					break
-				}
-			}
-			f.Close()
-			if e != nil {
-				if er := os.RemoveAll(p); er != nil {
-					log.Println(e)
-				}
-			}
-			if er := os.Remove(src); er != nil {
-				log.Println(e)
-			}
-		}
-	}
-	return
-}
-*/

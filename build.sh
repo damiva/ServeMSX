@@ -31,4 +31,8 @@ for PLATFORM in "${PLATFORMS[@]}"; do
     if [[ "$o" -ne "windows" ]]; then chmod +x $f; fi
     echo "done!"
 done
-#rm -f embed/index.html.gz
+cd assets
+for DIC in *.json; do
+    gzip -f -k -c $DIC > ../distribs/$DIC.gz
+done
+cd ..

@@ -40,31 +40,8 @@ var (
 	mutex   = new(sync.Mutex)
 	mypath  string
 	started = time.Now()
-	//signals = make(chan os.Signal, 1)
 )
 
-/*
-func init() {
-	signal.Notify(signals, os.Interrupt, syscall.SIGTERM, syscall.SIGABRT)
-	go func() {
-		s := <-signals
-		if stg.toSave {
-			if e := stg.save(); e != nil {
-				log.Println("Savings settings error:", e)
-			}
-		}
-		mutex.Lock()
-		if s == syscall.SIGABRT {
-			log.Println("Restarting...")
-			os.Exit(0)
-		}
-		log.Println("Closing server, because of OS signal catched:", s)
-		if e := server.Close(); e != nil {
-			log.Fatalln("Closing error:", e)
-		}
-	}()
-}
-*/
 func restart() {
 	mutex.Lock()
 	log.Println("Restarting...")

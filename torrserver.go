@@ -31,10 +31,14 @@ func torrMain(w http.ResponseWriter, r *http.Request) {
 		Stat, Active_peers, Total_peers  int
 		Torrent_size                     int64
 	}
+	ly, cm := "0,0,6,2", stg.Compress[r.FormValue("id")]
+	if cm {
+		ly = "0,0,8,2"
+	}
 	check(download("http://"+stg.TorrServer+"/torrents", &d, map[string]string{"action": "list"}))
 	sort.Slice(d, func(i, j int) bool { return d[i].Stat < d[j].Stat })
-	l := &plist{Type: "list", Ext: "{ico:msx-white:bolt} TorrServer: " + stg.TorrServer, Template: plistObj{
-		"imageWidth": 1.25, "layout": "0,0,6,2", "imageFiller": "height-left", "icon": "msx-glass:bolt",
+	l := &plist{Type: "list", Ext: "{ico:msx-white:bolt} TorrServer: " + stg.TorrServer, Compress: cm, Template: plistObj{
+		"imageWidth": 1.25, "layout": ly, "imageFiller": "height-left", "icon": "msx-glass:bolt",
 		"options": plistObj{
 			"headline": "{dic:label:menu|Menu}",
 			"caption":  "{dic:label:menu|Menu}:{tb}{ico:msx-red:stop} {dic:Remove|Remove}{tb}{ico:msx-yellow:stop} {dic:Drop|Drop}",
@@ -51,9 +55,9 @@ func torrMain(w http.ResponseWriter, r *http.Request) {
 			"id":       i.Hash,
 			"headline": i.Title,
 			"image":    i.Poster,
-			"titleFooter": "{ico:attach-file}{tb}" + sizeFormat(i.Torrent_size) + "{col:msx-" + c[i.Stat] +
-				"}{br}{ico:arrow-upward}{tb}" + strconv.Itoa(i.Active_peers) + " / " + strconv.Itoa(i.Total_peers) +
-				"{br}{ico:flag}{tb}{dic:Torrent" + strconv.Itoa(i.Stat) + "}",
+			"titleFooter": "{col:msx-" + c[i.Stat] + "}{ico:flag} {dic:Torrent" + strconv.Itoa(i.Stat) + "}" +
+				"{br}{ico:attach-file} " + sizeFormat(i.Torrent_size) +
+				"{tb}{ico:arrow-upward} " + strconv.Itoa(i.Active_peers) + " / " + strconv.Itoa(i.Total_peers),
 			"action": "content:http://" + r.Host + "/msx/torr?noadd&id={ID}&link=" + i.Hash,
 		})
 	}
@@ -96,7 +100,7 @@ func torrLink(w http.ResponseWriter, r *http.Request, p string) {
 	}
 	check(download("http://"+stg.TorrServer+"/stream/?stat&link="+url.QueryEscape(p), &t, nil))
 	var as []plistObj
-	l, tu, id := mediaList(r, t.Title, "{ico:msx-white:offline-bolt} "+sizeFormat(t.Torrent_size), "movie"), "http://"+stg.TorrServer+"/stream/", r.FormValue("id")
+	l, tu, id := mediaList(r, "{ico:msx-white-soft:offline-bolt} "+t.Title, "{ico:msx-white:attach-file} "+sizeFormat(t.Torrent_size), "movie"), "http://"+stg.TorrServer+"/stream/", r.FormValue("id")
 	if t.Active_peers > 0 || t.Total_peers > 0 {
 		l.Ext += "{tb}{ico:msx-white:arrow-upward} " + strconv.Itoa(t.Active_peers) + "/" + strconv.Itoa(t.Total_peers)
 	}
