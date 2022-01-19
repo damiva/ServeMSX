@@ -8,7 +8,7 @@ Your content server for [MediaStation X](https://msx.benzac.de/info/)<br>**It is
 - Serves TorrServer's torrents ([TorrServer](https://github.com/YouROK/TorrServer/releases) need to be used)
 - Serves plugins, written on [Tengo language](https://github.com/d5/tengo) (see [Plugins Development Manual](PLUGINS.md))
 - Some plugins are dveloped for example: [tivix & torlook](https://github.com/damiva/ServeMSX-Plugs)
-- Plugins installation (and updates) automation
+- Plugins installation automation
 - Self update automation
 ### To do:
 - More plugins
