@@ -127,6 +127,7 @@ func download(src string, dst, opt interface{}) error {
 		r, e = http.Get(src)
 	case bool:
 		g = v
+		r, e = http.Get(src)
 	case http.Header:
 		var q *http.Request
 		if q, e = http.NewRequest("GET", src, nil); e == nil {

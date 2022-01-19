@@ -48,7 +48,7 @@ func init() {
 			check(e)
 			for _, a := range i.Assets {
 				if strings.HasSuffix(a.Name, ".json.gz") {
-					ds = append(ds, plistObj{"label": strings.TrimSuffix(a.Name, ".json"), "data": a.Browser_download_url})
+					ds = append(ds, plistObj{"label": strings.TrimSuffix(a.Name, ".json.gz"), "data": a.Browser_download_url})
 				}
 			}
 			(&plist{
