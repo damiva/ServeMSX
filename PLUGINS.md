@@ -145,10 +145,10 @@ srv := import("server")
 Plugin can be distributed by the file, which can be installed by SeveMSX WEB UI. The file have to be:
 - Format: gziped tar
 - Name: **{plugin}.{PPP}.tgz**, where: 
-	- **{plugin}** - the name of plugin (the same as plugin folder name described above);
+	- **{plugin}** - the name of plugin (the same as plugin folder name described above), **it should not contain a point symbol(".")**;
 	- **{PPP}** - the three digits of *minimum plugin engine version of ServerMSX*, it the last three digits of ServeMSX version (the version of ServeMSX format is: **M.VV.PPP**, where **M** is a digit of major version, **VV** is two digits of functionality version, **PPP** is three digits of *plugin engine version*)
 - Content: the content of the plugin folder (described above), the example is:
-	- :file_cabinet: **myplugin.001.tgz**:
+	- :file_cabinet: **myplugin.200.tgz**:
 		- :spiral_notepad: manifest.json
 		- :spiral_notepad: start.tengo
 		- :spiral_notepad: main.tengo
