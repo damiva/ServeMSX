@@ -40,8 +40,8 @@ Choose the apropriate file for your OS/Architecture from the releases, download 
 ### Media Station X
 [Install MediaStation X on your TV](https://msx.benzac.de/info/?tab=PlatformSupport), run it, go to **Settings -> Start Parameter -> Setup** and enter the address (default port is 8008) of the machine where ServeMSX is running.
 ### Local media files
-Go to Web UI: **http://{IP}:8008** and set the folders (on server side).
+In a browser go to Web UI: **http://{IP}:8008** and set the folders (on server side).
 ### Torrents
 To play torrents online, you should install and use [TorrServer](https://github.com/YouROK/TorrServer/releases).<br>In the ServeMSX on Media Station X goto **Settings -> TorrServer** and enter the address (default port is 8090) of the machine where TorrServer is running (if it is the same maching with ServeMSX, it will be detected automatically).
 ### Plugins
-Go to Web UI: **http://{IP}:8008** and add plugins (**.tgz** files).
+In a browser go to Web UI: **http://{IP}:8008** and add plugins (**.tgz** files).
