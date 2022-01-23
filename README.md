@@ -3,7 +3,7 @@ Your content server for [MediaStation X](https://msx.benzac.de/info/)<br>**It is
 
 ## Functionality
 ### Now:
-- Serves local video & audio files
+- Serves local video, audio and photo files
 - Serves local torrent files ([TorrServer](https://github.com/YouROK/TorrServer/releases) need to be used)
 - Serves TorrServer's torrents ([TorrServer](https://github.com/YouROK/TorrServer/releases) need to be used)
 - Serves plugins, written on [Tengo language](https://github.com/d5/tengo) (see [Plugins Development Manual](PLUGINS.md))
