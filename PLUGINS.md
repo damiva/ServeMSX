@@ -77,7 +77,7 @@ srv := import("server")
 - `plugin {string}`: the name of the plugin is running.
 - `path {string}`: the path of the request's uri (after plugin name) (e.g. http://{ip}:{port}/{plugin}/**[path]**).
 - `base_url {string}`: the base url of the plugin (e.g. **http://{ip}:{port}/{plugin}/**).
-- `torrserver {string}`: the address of the TorrServer (if it is not set - empty string).
+- `settings {map}`: the object representing user's settings...
 
 #### Functions
 - `read() => {bytes/error}`: returns the request body as is.
@@ -137,10 +137,8 @@ srv := import("server")
 	- if [any] omited - reads the file with the path {string} and returns {bytes/error}, if the file is not exists returns *undefined*;
 	- if [any] is *undefuned* - removes the file, and returns {undefined/error};
 	- else - writes {any} to the file, if it is not exists it is created, if exits - it is truncated.
-- `player({string}[, bool/string]) {string/map}`: *underconstruction*.
 - `log_err([any...])`: logs [any...] to the error logging.
 - `log_inf([any...])`: logs [any...] to the info logging.
-- `dictionary() [string]`: returns the name of current dictionary (language).
 ### Plugins distribution
 Plugin can be distributed by the file, which can be installed by SeveMSX WEB UI. The file have to be:
 - Format: gziped tar
