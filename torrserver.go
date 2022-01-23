@@ -31,7 +31,7 @@ func torrMain(w http.ResponseWriter, r *http.Request) {
 		Stat, Active_peers, Total_peers  int
 		Torrent_size                     int64
 	}
-	ly, cm := "0,0,6,2", stg.Compress[r.FormValue("id")]
+	ly, cm := "0,0,6,2", stg.Clients[r.FormValue("id")]&cCompressed != 0
 	if cm {
 		ly = "0,0,8,2"
 	}
@@ -39,16 +39,11 @@ func torrMain(w http.ResponseWriter, r *http.Request) {
 	sort.Slice(d, func(i, j int) bool { return d[i].Stat < d[j].Stat })
 	l := &plist{Type: "list", Ext: "{ico:msx-white:bolt} TorrServer: " + stg.TorrServer, Compress: cm, Template: plistObj{
 		"imageWidth": 1.25, "layout": ly, "imageFiller": "height-left", "icon": "msx-glass:bolt",
-		"options": plistObj{
-			"headline": "{dic:label:menu|Menu}",
-			"caption":  "{dic:label:menu|Menu}:{tb}{ico:msx-red:stop} {dic:Remove|Remove}{tb}{ico:msx-yellow:stop} {dic:Drop|Drop}",
-			"template": plistObj{"enumerate": false, "type": "control", "layout": "0,0,8,1"},
-			"items": []plistObj{
-				{"key": "red", "icon": "msx-red:stop", "label": "{dic:Remove|Remove}", "action": "execute:fetch:http://" + r.Host + "/msx/torr?del={context:id}"},
-				{"key": "yellow", "icon": "msx-yellow:stop", "label": "{dic:Drop|Drop}", "action": "execute:fetch:http://" + r.Host + "/msx/torr?drop={context:id}"},
-			},
-		},
-	}}
+		"options": options(
+			plistObj{"key": "red", "label": "{dic:Remove|Remove}", "action": "execute:fetch:http://" + r.Host + "/msx/torr?del={context:id}"},
+			plistObj{"key": "green", "label": "{dic:Drop|Drop}", "action": "execute:fetch:http://" + r.Host + "/msx/torr?drop={context:id}"},
+			nil,
+		)}}
 	c := [6]string{"yellow", "yellow", "yellow", "green", "red", "white-soft"}
 	for _, i := range d {
 		l.Items = append(l.Items, plistObj{
@@ -73,19 +68,14 @@ func torrDel(w http.ResponseWriter, i string, del bool) {
 	svcAnswer(w, "reload:content", nil)
 }
 func torrAdd(w http.ResponseWriter, l, t, i string) {
-	u := "http://" + stg.TorrServer + "/stream/?save&link=" + url.QueryEscape(l)
-	if t != "" {
-		u += "&title=" + url.QueryEscape(t)
-	}
-	if i != "" {
-		u += "&poster=" + url.QueryEscape(i)
-	}
-	r, e := http.Get(u)
-	check(e)
-	if r.StatusCode != 200 {
-		panic(r.StatusCode)
-	}
-	svcAnswer(w, "info:OK", nil)
+	check(download("http://"+stg.TorrServer+"/torrents", new([]byte), struct {
+		A string `json:"action"`
+		L string `json:"link"`
+		T string `json:"title,omitempty"`
+		I string `json:"poster,omitempty"`
+		S bool   `json:"save_to_db"`
+	}{"add", l, t, i, true}))
+	svcAnswer(w, "info:{dic:Added|Added}", nil)
 }
 func torrLink(w http.ResponseWriter, r *http.Request, p string) {
 	var t struct {
@@ -100,7 +90,12 @@ func torrLink(w http.ResponseWriter, r *http.Request, p string) {
 	}
 	check(download("http://"+stg.TorrServer+"/stream/?stat&link="+url.QueryEscape(p), &t, nil))
 	var as []plistObj
-	l, tu, id := mediaList(r, "{ico:msx-white-soft:offline-bolt} "+t.Title, "{ico:msx-white:attach-file} "+sizeFormat(t.Torrent_size), "movie"), "http://"+stg.TorrServer+"/stream/", r.FormValue("id")
+	if !r.Form.Has("noadd") {
+		as = append(as, plistObj{"key": "green", "label": "{dic:AddTorr|Add the torrent to My torrents}", "action": "execute:fetch:http://" + r.Host + "/msx/torr?add=" + url.QueryEscape(p) + "&ttl=" + url.QueryEscape(r.FormValue("ttl")) + "&img=" + url.QueryEscape(r.FormValue("img"))})
+	}
+	l := mediaList(r, "{ico:msx-white-soft:offline-bolt} "+t.Title, "{ico:msx-white:attach-file} "+sizeFormat(t.Torrent_size), "movie", as, false)
+	as = nil
+	tu, id := "http://"+stg.TorrServer+"/stream/", r.FormValue("id")
 	if t.Active_peers > 0 || t.Total_peers > 0 {
 		l.Ext += "{tb}{ico:msx-white:arrow-upward} " + strconv.Itoa(t.Active_peers) + "/" + strconv.Itoa(t.Total_peers)
 	}
@@ -127,18 +122,6 @@ func torrLink(w http.ResponseWriter, r *http.Request, p string) {
 		}
 	}
 	l.Items = append(l.Items, as...)
-	if !r.Form.Has("noadd") {
-		l.Template["options"] = plistObj{
-			"headline": "{dic:label:menu|Menu}",
-			"caption":  "{dic:label:menu|Menu}:{tb}{ico:msx-green:stop} {dic:AddTorr|Add this torrent to My torrents}",
-			"template": plistObj{"enumerate": false, "type": "control", "layout": "0,0,8,1"},
-			"items": []plistObj{{
-				"key":    "green",
-				"icon":   "msx-green:stop",
-				"label":  "{dic:AddTorr|Add to My torrents}",
-				"action": "execute:fetch:http://" + r.Host + "/msx/torr?add=" + url.QueryEscape(p) + "&ttl=" + url.QueryEscape(r.FormValue("ttl")) + "&img=" + url.QueryEscape(r.FormValue("img")),
-			}}}
-	}
 	l.write(w)
 }
 func checkTorr(a string) (v string, e error) {

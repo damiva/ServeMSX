@@ -14,6 +14,8 @@
             input,option{padding-left: 1.5em; background-repeat: no-repeat; background-position: .1em; background-size: 1em;}
             select      {font-size: inherit;}
             svg         {height: 1em; width: 1em; position: absolute; margin: .1em; fill:slategray}
+            a[href]     {font-weight: bold;}
+            a[href]::after {content: "*";}
             .ok         {background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22slategray%22%3E%3Cpath%20d%3D%22M20.285%202l-11.285%2011.567-5.286-5.011-3.714%203.716%209%208.728%2015-15.285z%22%2F%3E%3C%2Fsvg%3E")}
             .er         {color: red; font-weight: bold; background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22red%22%3E%3Cpath%20d%3D%22M24%2020.188l-8.315-8.209%208.2-8.282-3.697-3.697-8.212%208.318-8.31-8.203-3.666%203.666%208.321%208.24-8.206%208.313%203.666%203.666%208.237-8.318%208.285%208.203z%22%2F%3E%3C%2Fsvg%3E")}
             .folder     {background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22slategray%22%3E%3Cpath%20d%3D%22M11%205c-1.629%200-2.305-1.058-4-3h-7v20h24v-17h-13z%22%2F%3E%3C%2Fsvg%3E")}
@@ -40,7 +42,8 @@
             function info(d) {
                 ["Version", "Platform"].forEach(e => { if(d[e]) $(e).innerText = d[e]});
                 ["MemSys", "MemAlloc"].forEach(e => { $(e).innerText = Math.round(d[e] / 1024) });
-                ["TorrServer", "Video", "Music", "Photo"].forEach(e => { document.getElementById(e).value = d[e] || ""});
+                ["TorrServer", "Video", "Music", "Photo"].forEach(e => { $(e).value = d[e] || ""});
+                if(d.TorrServer) $("goTorr").href = "http://" + d.TorrServer;
                 document.getElementById("Plugins").innerHTML = d.Plugins.map(
                     p => "<option class='" + (p.Error ? "er" : p.Torrent ? "bolt" : "ok") + "' value='" + p.Name + "'>" + p.Name + ": " + (p.Error || p.Label) + "</option>"
                 ).join("");
@@ -110,7 +113,7 @@
             <tr><th><span lang="en">Platform</span><span lang="ru">Платформа</span>:</th><td id="Platform"></td></tr>
             <tr><th><span lang="en">Memory used</span><span lang="ru">Используется памяти</span>:</th><td><span id="MemAlloc"></span> / <span id="MemSys"></span> KB</td></tr>
             <tr><th colspan="2"><span lang="en">Settings</span><span lang="ru">Настройки</span>:</th></tr>    
-            <tr><th>TorrServer:</th><td><input class="bolt" id="TorrServer" readonly data-ru="Введите адрес TorrServer:" data-en="Enter the address of TorrServer:" onclick="torr(this);"></td></tr>
+            <tr><th><a id="goTorr">TorrServer</a>:</th><td><input class="bolt" id="TorrServer" readonly data-ru="Введите адрес TorrServer:" data-en="Enter the address of TorrServer:" onclick="torr(this);"></td></tr>
             <tr><th><span lang="en">My video</span><span lang="ru">Моё видео</span>:</th><td><input class="folder" id="Video" readonly data-ru="Введите путь к видео файлам:" data-en="Enter the path to video files:" onclick="symlink(this)"></td></tr>
             <tr><th><span lang="en">My music</span><span lang="ru">Моя музыка</span>:</th><td><input class="folder" id="Music" readonly data-ru="Введите путь к файлам с музыкой:" data-en="Enter the path to music files:" onclick="symlink(this)"></td></tr>
             <tr><th><span lang="en">My photo</span><span lang="ru">Мои фотографии</span>:</th><td><input class="folder" id="Photo" readonly data-ru="Введите путь к фото файлам:" data-en="Enter the path to photo files:" onclick="symlink(this)"></td></tr>

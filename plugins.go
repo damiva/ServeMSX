@@ -92,18 +92,16 @@ func tengoRun(w http.ResponseWriter, r *http.Request, script, plug, path string)
 	t.SetImportDir(plugpath)
 	mm := stdlib.GetModuleMap("math", "text", "times", "rand", "json", "base64", "hex")
 	mm.AddBuiltinModule("server", tengohttp.GetModuleMAP(w, r, nil, map[string]tengo.Object{
-		"version":    &tengo.String{Value: Vers},
-		"script":     &tengo.String{Value: script},
-		"plugin":     &tengo.String{Value: plug},
-		"path":       &tengo.String{Value: path},
-		"torrserver": &tengo.String{Value: stg.TorrServer},
-		"base_url":   &tengo.String{Value: "http://" + r.Host + "/" + plug + "/"},
-		"memory":     &tengo.UserFunction{Name: "memory", Value: tengoMem(plug)},
-		"file":       &tengo.UserFunction{Name: "file", Value: tengoFile(plugpath)},
-		"player":     &tengo.UserFunction{Name: "player", Value: tengoPlayer(r)},
-		"log_err":    &tengo.UserFunction{Name: "log_err", Value: tengoLog(plug, log.Default())},
-		"log_inf":    &tengo.UserFunction{Name: "log_inf", Value: tengoLog(plug, out)},
-		"dictionary": &tengo.UserFunction{Name: "dictionary", Value: tengoDic},
+		"version":  &tengo.String{Value: Vers},
+		"script":   &tengo.String{Value: script},
+		"plugin":   &tengo.String{Value: plug},
+		"path":     &tengo.String{Value: path},
+		"base_url": &tengo.String{Value: "http://" + r.Host + "/" + plug + "/"},
+		"settings": &tengo.Map{Value: tengoSTG(r)},
+		"memory":   &tengo.UserFunction{Name: "memory", Value: tengoMem(plug)},
+		"file":     &tengo.UserFunction{Name: "file", Value: tengoFile(plugpath)},
+		"log_err":  &tengo.UserFunction{Name: "log_err", Value: tengoLog(plug, log.Default())},
+		"log_inf":  &tengo.UserFunction{Name: "log_inf", Value: tengoLog(plug, out)},
 	}))
 	t.SetImports(mm)
 	_, e := t.Run()
@@ -119,14 +117,14 @@ func tengoPanic(args ...tengo.Object) (tengo.Object, error) {
 	}
 	return nil, nil
 }
-func tengoLog(plg string, log *log.Logger) func(...tengo.Object) (tengo.Object, error) {
+func tengoLog(p string, l *log.Logger) func(...tengo.Object) (tengo.Object, error) {
 	return func(args ...tengo.Object) (tengo.Object, error) {
-		vs := []interface{}{plg + ":"}
+		vs := []interface{}{p + ":"}
 		for _, a := range args {
 			v, _ := tengo.ToString(a)
 			vs = append(vs, v)
 		}
-		log.Println(vs...)
+		l.Println(vs...)
 		return nil, nil
 	}
 }
@@ -143,84 +141,35 @@ func tengoMem(plug string) func(...tengo.Object) (tengo.Object, error) {
 		return
 	}
 }
-func tengoPlayer(r *http.Request) func(...tengo.Object) (tengo.Object, error) {
-	return func(args ...tengo.Object) (tengo.Object, error) {
-		if l := len(args); l == 1 {
-			args = append(args, tengo.FalseValue)
-		} else if l != 2 {
-			return nil, tengo.ErrWrongNumArguments
-		}
-		id, _ := tengo.ToString(args[0])
-		switch v := args[1].(type) {
-		case *tengo.Bool:
-			ps := &tengo.Map{Value: make(map[string]tengo.Object)}
-			for k, p := range playerProp(r.Host, id, !v.IsFalsy()) {
-				ps.Value[k] = &tengo.String{Value: p}
-			}
-			return ps, nil
-		case *tengo.String:
-			iv, ul := true, v.Value
-			switch ul[:6] {
-			case "audio:":
-				iv = false
-				fallthrough
-			case "video:":
-				ul = ul[6:]
-			}
-			return &tengo.String{Value: playerURL(id, ul, iv)}, nil
-		default:
-			return nil, tengo.ErrInvalidArgumentType{Name: "first", Expected: "bool/string", Found: args[0].TypeName()}
-		}
-	}
-}
 func tengoFile(pth string) func(...tengo.Object) (tengo.Object, error) {
-	return func(args ...tengo.Object) (rtn tengo.Object, err error) {
-		switch len(args) {
-		case 1:
-			if n, _ := tengo.ToString(args[0]); n == "" {
-				err = &tengo.ErrInvalidArgumentType{Name: "first", Expected: "not empty", Found: "empty"}
-			} else if b, e := os.ReadFile(filepath.Join(pth, filepath.Clean(n))); e == nil {
-				rtn = &tengo.Bytes{Value: b}
-			} else if !os.IsNotExist(e) {
-				rtn = &tengo.Error{Value: &tengo.String{Value: e.Error()}}
-			}
-		case 2:
-			if n, _ := tengo.ToString(args[0]); n == "" {
-				err = &tengo.ErrInvalidArgumentType{Name: "first", Expected: "not empty", Found: "empty"}
+	return func(args ...tengo.Object) (r tengo.Object, e error) {
+		if l := len(args); l < 1 || l > 2 {
+			e = tengo.ErrWrongNumArguments
+		} else if p, _ := tengo.ToString(args[0]); p == "" {
+			e = tengo.ErrInvalidArgumentType{Name: "first", Expected: "not empty", Found: "empty"}
+		} else {
+			p = filepath.Join(pth, filepath.Clean(p))
+			if l == 1 {
+				var b []byte
+				if b, e = os.ReadFile(p); e == nil {
+					r = &tengo.Bytes{Value: b}
+				}
+			} else if b, o := args[1].(*tengo.Bytes); o {
+				e = os.WriteFile(p, b.Value, 0666)
+			} else if b, o := tengo.ToString(args[0]); o {
+				e = os.WriteFile(p, []byte(b), 0666)
 			} else {
-				var (
-					b []byte
-					d bool
-					e error
-				)
-				if v, o := args[1].(*tengo.Bytes); o {
-					b = v.Value
-				} else if v, o := tengo.ToString(args[1]); o {
-					b = []byte(v)
+				if e = os.Remove(p); e == nil {
+					r = tengo.TrueValue
 				} else {
-					d = true
-				}
-				if d {
-					e = os.Remove(n)
-				} else {
-					e = os.WriteFile(filepath.Join(pth, filepath.Clean(n)), b, 0666)
-				}
-				if e != nil {
-					rtn = &tengo.Error{Value: &tengo.String{Value: e.Error()}}
+					r = tengo.FalseValue
 				}
 			}
-		default:
-			err = tengo.ErrWrongNumArguments
+			if e != nil && !os.IsExist(e) {
+				r = &tengo.Error{Value: &tengo.String{Value: e.Error()}}
+			}
+			e = nil
 		}
 		return
-	}
-}
-func tengoDic(args ...tengo.Object) (tengo.Object, error) {
-	if len(args) != 0 {
-		return nil, tengo.ErrWrongNumArguments
-	} else if _, n, _, e := getDic(); e != nil {
-		return &tengo.Error{Value: &tengo.String{Value: e.Error()}}, nil
-	} else {
-		return &tengo.String{Value: n}, nil
 	}
 }

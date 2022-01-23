@@ -10,16 +10,16 @@ import (
 	"time"
 )
 
-const pthSettings = "settings.json"
+const pthSettings, cHTML5X, cCompressed, cPhoto, cMarksLIFO = "settings.json", 1, 2, 4, 8
 
 type settings struct {
-	TorrServer               string
-	HTML5X, Compress, Photos map[string]bool
+	TorrServer string
+	Clients    map[string]int
 }
 type client struct{ Addr, Platform, Player, Vers string }
 
 var (
-	stg     = &settings{"", make(map[string]bool), make(map[string]bool), make(map[string]bool)}
+	stg     = new(settings)
 	clients = make(map[string]client)
 )
 
@@ -50,6 +50,9 @@ func (s *settings) load() (e error) {
 	} else if os.IsNotExist(e) {
 		e = s.save()
 	}
+	if stg.Clients == nil {
+		stg.Clients = make(map[string]int)
+	}
 	return
 }
 func (s *settings) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -65,15 +68,7 @@ func (s *settings) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			a, d = s.setTorr(v, !r.URL.Query().Has("v"))
 			check(s.save())
 		case float64:
-			id := r.URL.Query().Get("id")
-			switch v {
-			case 1:
-				s.HTML5X[id] = !s.HTML5X[id]
-			case 2:
-				s.Compress[id] = !s.Compress[id]
-			case 3:
-				s.Photos[id] = !s.Photos[id]
-			}
+			s.Clients[r.URL.Query().Get("id")] ^= int(v)
 			check(s.save())
 			a = "reload:menu"
 		case map[string]interface{}:

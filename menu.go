@@ -28,15 +28,19 @@ func init() {
 	http.HandleFunc("/msx/menu", func(w http.ResponseWriter, r *http.Request) {
 		pls, id, u := strings.SplitN(r.FormValue("player"), "/", 2)[0], r.FormValue("id"), "http://"+r.Host
 		clients[id] = client{r.RemoteAddr, r.FormValue("platform"), pls, r.FormValue("v")}
-		if stg.HTML5X[id] {
-			pls += " {col:msx-white}{ico:toggle-on} html5x"
-		} else {
+		if stg.Clients[id]&cHTML5X == 0 {
 			pls = "{txt:msx-white:" + pls + "} {ico:msx-white:toggle-off} html5x"
+		} else {
+			pls += " {col:msx-white}{ico:toggle-on} html5x"
 		}
 		l := &plist{Logo: u + "/logotype.png", Menu: []plistObj{ /*{"icon": "history", "label": "{dic:Recent|Continue}...", "data": u + "/msx/recent?id={ID}"}*/ }}
-		for _, f := range [3][2]string{{pthVideo, "video-library"}, {pthMusic, "library-music"}, {pthPhoto, "photo-library"}} {
+		for i, f := range [4][2]string{{pthMarks, "bookmarks"}, {pthVideo, "video-library"}, {pthMusic, "library-music"}, {pthPhoto, "photo-library"}} {
 			if _, e := os.Stat(f[0]); !os.IsNotExist(e) {
-				l.Menu = append(l.Menu, plistObj{"icon": f[1], "extensionIcon": "folder-open", "label": "{dix:" + f[0] + "}My " + f[0], "data": u + "/msx/" + f[0] + "/?id={ID}"})
+				c, s := "folder-open", "/?id={ID}"
+				if i == 0 {
+					c, s = "cloud-queue", "?id={ID}"
+				}
+				l.Menu = append(l.Menu, plistObj{"icon": f[1], "extensionIcon": c, "label": "{dix:" + f[0] + "}My " + f[0], "data": u + "/msx/" + f[0] + s})
 			}
 		}
 		ta := "{dic:label:none|None}"
@@ -54,7 +58,7 @@ func init() {
 						if p.Torrent {
 							m["extensionIcon"] = "bolt"
 						} else {
-							m["extensionIcon"] = "http"
+							m["extensionIcon"] = "cloud-queue"
 						}
 						if p.Label == "" {
 							m["label"] = p.Name
@@ -79,7 +83,7 @@ func init() {
 		}
 		ts := started.UnixMilli()
 		lst := "{txt:msx-white:dic:Default|default} {ico:msx-white:toggle-off} {dic:Compress|compressed}"
-		if stg.Compress[id] {
+		if stg.Clients[id]&cCompressed != 0 {
 			lst = "{dic:Default|default} {col:msx-white}{ico:toggle-on} {dic:Compress|compressed}"
 		}
 		l.Menu = append(l.Menu, plistObj{"id": "stg", "icon": "settings", "label": "{dic:label:settings|Settings}",
@@ -92,8 +96,8 @@ func init() {
 					"live": plistObj{"type": "schedule", "from": ts, "to": ts, "titleHeader": "{ico:timer}{tb}{txt:msx-white:overflow:text:dhms}"}},
 				{"type": "space", "layout": "0,2,12,1", "text": "{txt:msx-white:" + Name + "} {dix:About}is a software for playing user's content and developing user's plugins.{br}It does not provide any video/audio content by itself!", "alignment": "center"},
 				{"id": "update", "type": "control", "layout": "0,3,6,1", "label": "{dic:CheckUp|Check updates}", "icon": "system-update-alt", "action": "execute:fetch:" + u + "/update"},
-				{"type": "control", "layout": "0,4,6,1", "icon": "smart-display", "label": "{dic:label:player|Player}:", "extensionLabel": pls, "action": "execute:" + u + "/settings?id={ID}", "data": 1},
-				{"type": "control", "layout": "0,5,6,1", "label": "{dic:Files|List of files}:", "icon": "format-list-bulleted", "extensionLabel": lst, "action": "execute:" + u + "/settings?id={ID}", "data": 2},
+				{"type": "control", "layout": "0,4,6,1", "icon": "smart-display", "label": "{dic:label:player|Player}:", "extensionLabel": pls, "action": "execute:" + u + "/settings?id={ID}", "data": cHTML5X},
+				{"type": "control", "layout": "0,5,6,1", "label": "{dic:Files|List of files}:", "icon": "format-list-bulleted", "extensionLabel": lst, "action": "execute:" + u + "/settings?id={ID}", "data": cCompressed},
 				{"id": "dic", "type": "control", "layout": "6,3,6,1", "icon": "language", "label": "{dic:Language|Language}:", "extensionLabel": "default", "action": "panel:" + u + "/msx/dictionary", "live": map[string]string{"type": "setup", "action": "execute:service:info:dictionary:" + u + "/msx/dictionary"}},
 				{"type": "control", "layout": "6,4,6,1", "icon": "bolt", "label": "TorrServer:", "extensionLabel": ta, "action": "execute:" + u + "/settings", "data": nil},
 				{"type": "control", "layout": "6,5,6,1", "label": "{dic:label:application|Application}", "icon": "monitor", "extensionIcon": "menu-open", "action": "dialog:application"},
