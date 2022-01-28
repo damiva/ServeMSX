@@ -28,10 +28,11 @@ Choose the apropriate file for your OS/Architecture from the releases, download 
 ### Run paramters:
 **ServeMSX [options]**<br>Where **[options]** can be one or more of:
 - **[IP]<:PORT>** - the address of the http server is listen to (default is **:8008**)
-- **-i** - do not log info messages (recomended to reduce log size)
+- **+i** - log info messages (they are not logged by default)
 - **-t** - do not print timestamp in logs (useful for systemd service manager)
 - **-s** - skip verifying TLS sertificates (useful for tiny OS, like on routers)
 - **-d** - use the directory of execution as working directory (default is current working directory)
+- **+f** - log ffmpeg messages (they are not logged by default)
 ### Note for running as service:
 - Errors logs to STDERR, 
 - Info messages logs to STDOUT,
