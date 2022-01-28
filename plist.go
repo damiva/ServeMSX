@@ -46,7 +46,7 @@ func mediaList(r *http.Request, hdr, ext, ico string, opt []plistObj, optEach bo
 	rtn := &plist{
 		Type: "list", Head: hdr, Ext: ext, Compress: cmp,
 		Template: plistObj{
-			"icon":       "msx-white-soft:" + ico,
+			"icon":       ico,
 			"type":       "control",
 			"layout":     lay,
 			"progress":   -1,
@@ -106,7 +106,7 @@ func options(opts ...plistObj) plistObj {
 	cap := "{dic:caption:options|Options}:"
 	for i := 0; i < len(opts); i++ {
 		if opts[i] == nil {
-			opts[i] = plistObj{"key": "yellow", "label": "{dic:Up|Up}", "action": "focus:index:0"}
+			opts[i] = plistObj{"key": "yellow", "label": "{dic:Up|Up}", "action": "[cleanup|focus:index:0]"}
 		}
 		cap += "{tb}{ico:msx-" + opts[i]["key"].(string) + ":stop} " + opts[i]["label"].(string)
 		opts[i]["icon"] = "msx-" + opts[i]["key"].(string) + ":stop"

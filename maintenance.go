@@ -34,8 +34,8 @@ func init() {
 			}
 			check(download(u, mypath+".new", nil))
 			check(os.Chmod(mypath+".new", 0777))
-			mutex.Lock()
-			defer mutex.Unlock()
+			mutexR.Lock()
+			defer mutexR.Unlock()
 			check(os.Rename(mypath, mypath+".old"))
 			if e := os.Rename(mypath+".new", mypath); e != nil {
 				os.Rename(mypath+".old", mypath)
@@ -60,12 +60,16 @@ func init() {
 					}
 				}
 				if as[0] != "" {
-					svcAnswer(w, "execute:http://"+r.Host+"/msx/dialog", dialogStg{
-						"execute:fetch:http://" + r.Host + "/update?link=" + strings.Join(as, "&dic="),
-						"{dic:CheckUp|Check updates}:",
-						Name,
-						"{dic:HasUpdate|There are updates}:{br}" + Name + " {dic:label:version|Version} " + i.Tag_name + "{br}{br}{dix:Update}Would you like to update?",
-					})
+					if r.FormValue("v") == "" {
+						w.Write([]byte(`{"link":"` + strings.Join(as, "&dic=") + `","tag":"` + i.Tag_name + `"}`))
+					} else {
+						svcAnswer(w, "execute:http://"+r.Host+"/msx/dialog", dialogStg{
+							"execute:fetch:http://" + r.Host + "/update?link=" + strings.Join(as, "&dic="),
+							"{dic:CheckUp|Check updates}:",
+							Name,
+							"{dic:HasUpdate|There are updates}:{br}" + Name + " {dic:label:version|Version} " + i.Tag_name + "{br}{br}{dix:Update}Would you like to update?",
+						})
+					}
 					return
 				}
 			}
@@ -114,6 +118,7 @@ func init() {
 				panic(e)
 			}
 		}
+		w.Write([]byte("true"))
 	})
 }
 func download(src string, dst, opt interface{}) error {

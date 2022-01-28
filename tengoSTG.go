@@ -77,6 +77,48 @@ func tengoSTG(r *http.Request) (m map[string]tengo.Object) {
 				return nil, tengo.ErrWrongNumArguments
 			}
 		}},
+		"ffmpeg": &tengo.UserFunction{Name: "ffmpeg", Value: func(args ...tengo.Object) (tengo.Object, error) {
+			var a [2][]string
+			switch len(args) {
+			case 3:
+				if as, o := args[2].(*tengo.Array); !o {
+					return nil, tengo.ErrInvalidArgumentType{Name: "third", Expected: "array", Found: args[2].TypeName()}
+				} else {
+					for _, ao := range as.Value {
+						s, _ := tengo.ToString(ao)
+						a[1] = append(a[1], s)
+					}
+				}
+				fallthrough
+			case 2:
+				if as, o := args[1].(*tengo.Array); !o {
+					return nil, tengo.ErrInvalidArgumentType{Name: "second", Expected: "array", Found: args[1].TypeName()}
+				} else {
+					for _, ao := range as.Value {
+						s, _ := tengo.ToString(ao)
+						a[0] = append(a[0], s)
+					}
+				}
+				fallthrough
+			case 1:
+				if s, _ := tengo.ToString(args[0]); s == "" {
+					return nil, tengo.ErrInvalidArgumentType{Name: "first", Expected: "not empty", Found: "empty"}
+				} else if s, e := ffmpeg(r, s, a); e == nil {
+					return &tengo.String{Value: s}, nil
+				} else {
+					return &tengo.Error{Value: &tengo.String{Value: e.Error()}}, nil
+				}
+			default:
+				if stg.FFmpegCMD != "" && stg.FFmpegPORT != "" {
+					return &tengo.Map{Value: map[string]tengo.Object{
+						"cmd":  &tengo.String{Value: stg.FFmpegCMD},
+						"port": &tengo.String{Value: stg.FFmpegPORT},
+					}}, nil
+				} else {
+					return nil, nil
+				}
+			}
+		}},
 	}
 	if stg.Clients[id]&cCompressed == 0 {
 		m["compressed"] = tengo.FalseValue

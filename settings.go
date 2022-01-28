@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"os"
+	"os/exec"
 	"runtime"
 	"strings"
 	"time"
@@ -13,8 +14,8 @@ import (
 const pthSettings, cHTML5X, cCompressed, cPhoto, cMarksLIFO = "settings.json", 1, 2, 4, 8
 
 type settings struct {
-	TorrServer string
-	Clients    map[string]int
+	TorrServer, FFmpegCMD, FFmpegPORT string
+	Clients                           map[string]int
 }
 type client struct{ Addr, Platform, Player, Vers string }
 
@@ -24,11 +25,12 @@ var (
 )
 
 func init() {
+	stg.FFmpegPORT = "8009"
 	http.Handle("/settings", stg)
 }
 func (s *settings) save() (e error) {
 	var f *os.File
-	mutex.Lock()
+	mutexR.Lock()
 	if f, e = os.Create(pthSettings); e == nil {
 		j := json.NewEncoder(f)
 		j.SetIndent("", "  ")
@@ -37,7 +39,7 @@ func (s *settings) save() (e error) {
 		}
 		f.Close()
 	}
-	mutex.Unlock()
+	mutexR.Unlock()
 	return
 }
 func (s *settings) load() (e error) {
@@ -58,37 +60,55 @@ func (s *settings) load() (e error) {
 func (s *settings) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		var (
-			i struct{ Data interface{} }
+			i struct {
+				Code string
+				Data interface{}
+			}
 			a = "error:Unknown operation!"
 			d interface{}
 		)
 		check(json.NewDecoder(r.Body).Decode(&i))
-		switch v := i.Data.(type) {
-		case string:
-			a, d = s.setTorr(v, !r.URL.Query().Has("v"))
+		if i.Code != "" {
+			if i.Code[0] == '#' {
+				s.FFmpegCMD = i.Code[1:]
+				if s.FFmpegCMD != "" {
+					var e error
+					s.FFmpegCMD, e = exec.LookPath(i.Code[1:])
+					check(e)
+				}
+			} else {
+				s.FFmpegPORT = i.Code
+			}
+			a = "[back|reload:menu]"
 			check(s.save())
-		case float64:
-			s.Clients[r.URL.Query().Get("id")] ^= int(v)
-			check(s.save())
-			a = "reload:menu"
-		case map[string]interface{}:
-			for _, k := range [3]string{pthVideo, pthMusic, pthPhoto} {
-				if s, o := v[k].(string); o {
-					if e := os.Remove(k); e != nil && !os.IsNotExist(e) {
-						panic(e)
-					} else if s != "" {
-						if i, e := os.Stat(s); e != nil {
+		} else {
+			switch v := i.Data.(type) {
+			case string:
+				a, d = s.setTorr(v, !r.URL.Query().Has("v"))
+				check(s.save())
+			case float64:
+				s.Clients[r.URL.Query().Get("id")] ^= int(v)
+				check(s.save())
+				a = "reload:menu"
+			case map[string]interface{}:
+				for _, k := range [3]string{pthVideo, pthMusic, pthPhoto} {
+					if s, o := v[k].(string); o {
+						if e := os.Remove(k); e != nil && !os.IsNotExist(e) {
 							panic(e)
-						} else if !i.IsDir() {
-							panic(s + " is not a directory!")
+						} else if s != "" {
+							if i, e := os.Stat(s); e != nil {
+								panic(e)
+							} else if !i.IsDir() {
+								panic(s + " is not a directory!")
+							}
+							check(os.Symlink(s, k))
 						}
-						check(os.Symlink(s, k))
 					}
 				}
+				a = "info:OK"
+			default:
+				a, d = s.inputTorr(r.Host)
 			}
-			a = "info:OK"
-		default:
-			a, d = s.inputTorr(r.Host)
 		}
 		svcAnswer(w, a, d)
 	} else {

@@ -39,6 +39,9 @@ func init() {
 					log.Println(e)
 				}
 				boxText[id] = stg.Data
+				if _, o := boxLang[id]; !o {
+					boxLang[id] = keyboards[true] != ""
+				}
 				if q.Has("addr") {
 					id += "&addr"
 				}

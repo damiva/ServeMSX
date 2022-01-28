@@ -1,2 +1,2 @@
 package main
-const Name, Vers = "ServeMSX", "0.02.201"
+const Name, Vers = "ServeMSX", "0.02.202"

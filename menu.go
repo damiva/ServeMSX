@@ -33,7 +33,7 @@ func init() {
 		} else {
 			pls += " {col:msx-white}{ico:toggle-on} html5x"
 		}
-		l := &plist{Logo: u + "/logotype.png", Menu: []plistObj{ /*{"icon": "history", "label": "{dic:Recent|Continue}...", "data": u + "/msx/recent?id={ID}"}*/ }}
+		l := &plist{Logo: u + "/logotype.png", Menu: []plistObj{}}
 		for i, f := range [4][2]string{{pthMarks, "bookmarks"}, {pthVideo, "video-library"}, {pthMusic, "library-music"}, {pthPhoto, "photo-library"}} {
 			if _, e := os.Stat(f[0]); !os.IsNotExist(e) {
 				c, s := "folder-open", "/?id={ID}"
@@ -86,22 +86,30 @@ func init() {
 		if stg.Clients[id]&cCompressed != 0 {
 			lst = "{dic:Default|default} {col:msx-white}{ico:toggle-on} {dic:Compress|compressed}"
 		}
+		ffport := stg.FFmpegPORT
+		if ffport == "" {
+			ffport = "{dic:label:none|none}"
+		} else {
+			ffport = "{col:msx-white}" + ffport
+		}
 		l.Menu = append(l.Menu, plistObj{"id": "stg", "icon": "settings", "label": "{dic:label:settings|Settings}",
-			"data": plistObj{"extension": "{ico:msx-white:settings}", "pages": []map[string][]plistObj{{"items": {
-				{"type": "space", "layout": "0,0,12,2", "image": u + "/logotype.png", "imageFiller": "height", "imageWidth": 7, "imagePreload": true,
-					"headline":    "{txt:msx-white-soft:dic:label:version|Version} " + Vers,
-					"titleHeader": "", "titleFooter": "{ico:http}{tb}{txt:msx-white:" + r.Host +
-						"}{br}{ico:hardware}{tb}{txt:msx-white:" + runtime.GOOS + "/" + runtime.GOARCH +
-						"}{br}{ico:web}{tb}{txt:msx-white:https://github.com/" + gitRepo + "}",
-					"live": plistObj{"type": "schedule", "from": ts, "to": ts, "titleHeader": "{ico:timer}{tb}{txt:msx-white:overflow:text:dhms}"}},
-				{"type": "space", "layout": "0,2,12,1", "text": "{txt:msx-white:" + Name + "} {dix:About}is a software for playing user's content and developing user's plugins.{br}It does not provide any video/audio content by itself!", "alignment": "center"},
-				{"id": "update", "type": "control", "layout": "0,3,6,1", "label": "{dic:CheckUp|Check updates}", "icon": "system-update-alt", "action": "execute:fetch:" + u + "/update"},
-				{"type": "control", "layout": "0,4,6,1", "icon": "smart-display", "label": "{dic:label:player|Player}:", "extensionLabel": pls, "action": "execute:" + u + "/settings?id={ID}", "data": cHTML5X},
-				{"type": "control", "layout": "0,5,6,1", "label": "{dic:Files|List of files}:", "icon": "format-list-bulleted", "extensionLabel": lst, "action": "execute:" + u + "/settings?id={ID}", "data": cCompressed},
-				{"id": "dic", "type": "control", "layout": "6,3,6,1", "icon": "language", "label": "{dic:Language|Language}:", "extensionLabel": "default", "action": "panel:" + u + "/msx/dictionary", "live": map[string]string{"type": "setup", "action": "execute:service:info:dictionary:" + u + "/msx/dictionary"}},
-				{"type": "control", "layout": "6,4,6,1", "icon": "bolt", "label": "TorrServer:", "extensionLabel": ta, "action": "execute:" + u + "/settings", "data": nil},
-				{"type": "control", "layout": "6,5,6,1", "label": "{dic:label:application|Application}", "icon": "monitor", "extensionIcon": "menu-open", "action": "dialog:application"},
-			}}}}})
+			"data": plistObj{"extension": "{ico:msx-white:settings}", "options": options(plistObj{"key": "red", "label": "{dic:label:reload|Reload}", "action": "reload"}),
+				"pages": []map[string][]plistObj{{"items": {
+					{"type": "space", "layout": "0,0,12,2", "image": u + "/logotype.png", "imageFiller": "height", "imageWidth": 7, "imagePreload": true,
+						"headline":    "{txt:msx-white-soft:dic:label:version|Version} " + Vers,
+						"titleHeader": "", "titleFooter": "{ico:http}{tb}{txt:msx-white:" + r.Host +
+							"}{br}{ico:hardware}{tb}{txt:msx-white:" + runtime.GOOS + "/" + runtime.GOARCH +
+							"}{br}{ico:web}{tb}{txt:msx-white:https://github.com/" + gitRepo + "}",
+						"live": plistObj{"type": "schedule", "from": ts, "to": ts, "titleHeader": "{ico:timer}{tb}{txt:msx-white:overflow:text:dhms}"}},
+					{"type": "space", "layout": "0,2,12,1", "text": "{txt:msx-white:" + Name + "} {dix:About}is a software for playing user's content and developing user's plugins.{br}It does not provide any video/audio content by itself!", "alignment": "center"},
+					{"id": "update", "type": "control", "layout": "0,3,6,1", "label": "{dic:CheckUp|Check updates}", "icon": "system-update-alt", "action": "execute:fetch:" + u + "/update"},
+					{"type": "control", "layout": "0,4,6,1", "icon": "smart-display", "label": "{dic:label:player|Player}:", "extensionLabel": pls, "action": "execute:" + u + "/settings?id={ID}", "data": cHTML5X},
+					{"type": "control", "layout": "0,5,6,1", "label": "{dic:Files|List of files}:", "icon": "format-list-bulleted", "extensionLabel": lst, "action": "execute:" + u + "/settings?id={ID}", "data": cCompressed},
+					{"id": "dic", "type": "control", "layout": "6,3,6,1", "icon": "language", "label": "{dic:Language|Language}:", "extensionLabel": "default", "action": "panel:" + u + "/msx/dictionary", "live": map[string]string{"type": "setup", "action": "execute:service:info:dictionary:" + u + "/msx/dictionary"}},
+					{"type": "control", "layout": "6,4,6,1", "icon": "bolt", "label": "TorrServer:", "extensionLabel": ta, "action": "execute:" + u + "/settings", "data": nil},
+					{"type": "control", "layout": "6,5,6,1", "icon": "compare", "label": "{dic:FFmpeg|Port number for FFmpeg}:", "extensionLabel": ffport, "action": "execute:code:" + u + "/settings", "data": plistObj{"headline": "{dic:FFmpeg|Port for ffmpeg}:", "value": stg.FFmpegPORT}, "enabel": stg.FFmpegCMD != ""},
+					//{"type": "control", "layout": "6,5,6,1", "label": "{dic:label:application|Application}", "icon": "monitor", "extensionIcon": "menu-open", "action": "dialog:application"},
+				}}}}})
 		l.write(w)
 	})
 }

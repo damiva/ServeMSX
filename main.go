@@ -36,15 +36,17 @@ import (
 )
 
 var (
-	out     = log.New(os.Stdout, "(i) ", log.Flags())
-	mutex   = new(sync.Mutex)
+	out     = log.New(ioutil.Discard, "(i) ", log.Flags())
+	mutexR  = new(sync.Mutex)
+	mutexF  = new(sync.Mutex)
 	mypath  string
 	started = time.Now()
 )
 
 func restart() {
-	mutex.Lock()
 	log.Println("Restarting...")
+	clearFFmpeg()
+	mutexR.Lock()
 	os.Exit(0)
 }
 func check(e error) {
@@ -55,7 +57,6 @@ func check(e error) {
 func main() {
 	var e error
 	defer log.Fatalln(recover())
-	log.SetPrefix("<!> ")
 	mypath, e = os.Executable()
 	check(e)
 	for _, a := range os.Args[1:] {
@@ -63,9 +64,11 @@ func main() {
 		case "-t":
 			out.SetFlags(0)
 			log.SetFlags(0)
-		case "-i":
-			log.SetPrefix("")
-			out.SetOutput(ioutil.Discard)
+		case "+i":
+			log.SetPrefix("<!> ")
+			out.SetOutput(os.Stdout)
+		case "+f":
+			logFFmpeg = true
 		case "-s":
 			http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 		case "-d":
@@ -96,6 +99,9 @@ func main() {
 		} else if e != nil {
 			log.Println(e)
 		}
+	}
+	if e = checkFFmpeg(); e != nil {
+		log.Println(e)
 	}
 	out.Println(Name, "v.", Vers, "listening at", server.Addr)
 	check(server.ListenAndServe())
