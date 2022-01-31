@@ -48,4 +48,4 @@ To play torrents online, you should install and use [TorrServer](https://github.
 ### Plugins
 In a browser go to Web UI: **http://{IP}:8008** and add plugins (**.tgz** files).
 ### FFmpeg faturies
-Install ffmpeg on the same machine where ServeMSX is running. If your ffmpeg installation has another command to execute (default is **ffmpeg**) please set it in Web UI settings.
+Install [ffmpeg](https://ffmpeg.org/) on the same machine where ServeMSX is running. If your ffmpeg installation has another command to execute (default is **ffmpeg**) please set it in Web UI settings.
