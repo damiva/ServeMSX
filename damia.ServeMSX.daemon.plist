@@ -7,7 +7,7 @@
     <key>ServiceDescription</key>
     <string>ServeMSX for Media Station X</string>
     <key>ProgramArguments</key>
-    <array><string>/opt/ServeMSX/ServeMSX</string><string>-i</string></array>
+    <array><string>/opt/ServeMSX/ServeMSX</string></array>
     <key>WorkingDirectory</key>
     <string>/opt/ServeMSX</string>
     <key>RunAtLoad</key>
