@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 )
 
@@ -41,7 +42,7 @@ func init() {
 				os.Rename(mypath+".old", mypath)
 				panic(e)
 			}
-			svcAnswer(w, "restart", nil)
+			svcAnswer(w, "delay:installation:"+strconv.Itoa(performSecs)+":restart", nil)
 			go restart()
 			return
 		} else {
@@ -52,7 +53,7 @@ func init() {
 				_, l, _, _ := getDic()
 				for _, a := range i.Assets {
 					if strings.HasSuffix(a.Name, ".json.gz") {
-						if l != "" {
+						if l != "" && strings.HasPrefix(a.Name, l) {
 							as[1] = url.QueryEscape(a.Browser_download_url)
 						}
 					} else if strings.HasPrefix(a.Name, n) {

@@ -14,18 +14,17 @@ import (
 const pthSettings, cHTML5X, cCompressed, cPhoto, cMarksLIFO = "settings.json", 1, 2, 4, 8
 
 type settings struct {
-	TorrServer, FFmpegCMD, FFmpegPORT string
-	Clients                           map[string]int
+	TorrServer, FFmpegCMD, FFmpegPORT, Background string
+	Clients                                       map[string]int
 }
 type client struct{ Addr, Platform, Player, Vers string }
 
 var (
-	stg     = new(settings)
+	stg     = &settings{FFmpegPORT: "8009", Background: "background.jpg"}
 	clients = make(map[string]client)
 )
 
 func init() {
-	stg.FFmpegPORT = "8009"
 	http.Handle("/settings", stg)
 }
 func (s *settings) save() (e error) {
@@ -60,55 +59,54 @@ func (s *settings) load() (e error) {
 func (s *settings) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		var (
-			i struct {
-				Code string
-				Data interface{}
-			}
+			i struct{ Data interface{} }
 			a = "error:Unknown operation!"
 			d interface{}
 		)
 		check(json.NewDecoder(r.Body).Decode(&i))
-		if i.Code != "" {
-			if i.Code[0] == '#' {
-				s.FFmpegCMD = i.Code[1:]
-				if s.FFmpegCMD != "" {
-					var e error
-					s.FFmpegCMD, e = exec.LookPath(i.Code[1:])
-					check(e)
-				}
-			} else {
-				s.FFmpegPORT = i.Code
-			}
-			a = "[back|reload:menu]"
+		switch v := i.Data.(type) {
+		case string:
+			a, d = s.setTorr(v, !r.URL.Query().Has("v"))
 			check(s.save())
-		} else {
-			switch v := i.Data.(type) {
-			case string:
-				a, d = s.setTorr(v, !r.URL.Query().Has("v"))
-				check(s.save())
-			case float64:
-				s.Clients[r.URL.Query().Get("id")] ^= int(v)
-				check(s.save())
-				a = "reload:menu"
-			case map[string]interface{}:
-				for _, k := range [3]string{pthVideo, pthMusic, pthPhoto} {
-					if s, o := v[k].(string); o {
+		case float64:
+			s.Clients[r.URL.Query().Get("id")] ^= int(v)
+			check(s.save())
+			a = "reload:menu"
+		case map[string]interface{}:
+			for k, vv := range v {
+				if ss, o := vv.(string); o {
+					switch k {
+					case pthVideo, pthMusic, pthPhoto:
 						if e := os.Remove(k); e != nil && !os.IsNotExist(e) {
 							panic(e)
-						} else if s != "" {
-							if i, e := os.Stat(s); e != nil {
-								panic(e)
-							} else if !i.IsDir() {
-								panic(s + " is not a directory!")
-							}
-							check(os.Symlink(s, k))
+						} else if ss == "" {
+							continue
+						} else if i, e := os.Stat(ss); e != nil {
+							panic(e)
+						} else if !i.IsDir() {
+							panic(ss + " is not a directory!")
+						} else {
+							check(os.Symlink(ss, k))
 						}
+					case "Background":
+						s.Background = ss
+						check(s.save())
+					case "FFmpegCMD":
+						if s.FFmpegCMD = ss; s.FFmpegCMD != "" {
+							var e error
+							s.FFmpegCMD, e = exec.LookPath(s.FFmpegCMD)
+							check(e)
+						}
+						check(s.save())
+					case "FFmpegPORT":
+						s.FFmpegPORT = ss
+						check(s.save())
 					}
 				}
-				a = "info:OK"
-			default:
-				a, d = s.inputTorr(r.Host)
 			}
+			a = "info:OK"
+		default:
+			a, d = s.inputTorr(r.Host)
 		}
 		svcAnswer(w, a, d)
 	} else {

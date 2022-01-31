@@ -21,6 +21,7 @@
             .bolt       {background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22slategray%22%3E%3Cpath%20d%3D%22M12%200c-6.627%200-12%205.373-12%2012s5.373%2012%2012%2012%2012-5.373%2012-12-5.373-12-12-12zm-2%2019l1.5-5h-4.5l7-9-1.5%205h4.5l-7%209z%22%2F%3E%3C%2Fsvg%3E");}
             .exec       {background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22slategray%22%3E%3Cpath%20d%3D%22M12%200c-6.627%200-12%205.373-12%2012s5.373%2012%2012%2012%2012-5.373%2012-12-5.373-12-12-12zm2%2018h-4v-12h4v12z%22%2F%3E%3C%2Fsvg%3E");}
             .port       {background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22slategray%22%3E%3Cpath%20d%3D%22M22.548%209l.452-2h-5.364l1.364-6h-2l-1.364%206h-5l1.364-6h-2l-1.364%206h-6.184l-.452%202h6.182l-1.364%206h-5.36l-.458%202h5.364l-1.364%206h2l1.364-6h5l-1.364%206h2l1.364-6h6.185l.451-2h-6.182l1.364-6h5.366zm-8.73%206h-5l1.364-6h5l-1.364%206z%22%2F%3E%3C%2Fsvg%3E");}
+            .image      {background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22slategray%22%3E%3Cpath%20d%3D%22M5%208.5c0-.828.672-1.5%201.5-1.5s1.5.672%201.5%201.5c0%20.829-.672%201.5-1.5%201.5s-1.5-.671-1.5-1.5zm9%20.5l-2.519%204-2.481-1.96-4%205.96h14l-5-8zm8-4v14h-20v-14h20zm2-2h-24v18h24v-18z%22%2F%3E%3C%2Fsvg%3E");}
             .dragon     {background-color: green;}
         </style>
         <script>
@@ -37,39 +38,33 @@
             }
             function info() {
                 $("/settings", d => {
-                    ["Version", "Platform"].forEach(e => { if(d[e]) $(e).innerText = d[e]});
-                    ["MemSys", "MemAlloc"].forEach(e => { $(e).innerText = Math.round(d[e] / 1024) });
-                    ["TorrServer", "Video", "Music", "Photo", "FFmpegCMD", "FFmpegPORT"].forEach(e => { $(e).value = d[e] || ""});
-                    if(d.TorrServer) $("goTorr").href = "http://" + d.TorrServer;
-                    $("Plugins").innerHTML = d.Plugins.map(
-                        p => "<option class='" + (p.Error ? "er" : p.Torrent ? "bolt" : "ok") + "' value='" + p.Name + "'>" + p.Name + ": " + (p.Error || p.Label) + "</option>"
-                    ).join("");
                     $("MAIN").disabled = false;
                     $("DEL").disabled = true;
+                    ["Version", "Platform"].forEach(e => { if(d[e]) $(e).innerText = d[e]});
+                    ["MemSys", "MemAlloc"].forEach(e => { $(e).innerText = Math.round(d[e] / 1024) });
+                    ["TorrServer", "Video", "Music", "Photo", "FFmpegCMD", "FFmpegPORT", "Background"].forEach(e => { $(e).value = d[e] || ""});
+                    if(d.TorrServer) $("goTorr").href = "http://" + d.TorrServer;
+                    let ps = $("Plugins");
+                    ps.disabled = !Array.isArray(d.Plugins) || d.Plugins.length == 0;
+                    if(!ps.disabled) ps.innerHTML = d.Plugins.map(
+                        p => "<option class='" + (p.Error ? "er" : p.Torrent ? "bolt" : "ok") + "' value='" + p.Name + "'>" + p.Name + ": " + (p.Error || p.Label) + "</option>"
+                    ).join("");
+                    else if(typeof d.Plugins == "string") ps.innerHTML = "<option class='er'>" + d.Plugins + "</option>";
+                    else ps.innerHTML = "";
                 });
             }
             function language(){
                 var lng = $("lang").value;
                 document.querySelectorAll("[lang]").forEach(e => {e.hidden = e.lang != lng});
             }
-            function symlink(e) {
-                if(e.disabled) return;
-                const p = prompt(e.dataset[$("lang").value], e.value);
+            function set() {
+                if(this.disabled) return;
+                const p = prompt(this.dataset[$("lang")], this.value)
                 if(p === null) return;
-                $("/settings", info, '{"data":{"' + e.id.toLowerCase() + '":' + JSON.stringify(p) + '}}');
-            }
-            function ffmpeg(e) {
-                if(e.disabled) return;
-                let val = e.id == "FFmpegCMD" ? "ffmpeg" : "8009";
-                const p = prompt(e.dataset[$("lang").value], e.value || val);
-                if(p === null) return;
-                $("/settings", info, '{"code":' + JSON.stringify(e.id == "FFmpegCMD" ? ("#" + p) : p) + '}')
-            }
-            function torr(e){
-                if(e.disabled) return
-                const p = prompt(e.dataset[$("lang").value], e.value);
-                if(p === null) return;
-                $("/settings", info, '{"data":' + JSON.stringify(p) + '}');
+                let r = {data: {}};
+                if(this.id == "TorrServer") r.data = p;
+                else r.data[this.id.length == 5 ? this.id.toLower() : this.id] = p;
+                $("/settings", info, JSON.stringify(r));
             }
             function plugDel(){
                 let n = $("Plugins").value;
@@ -121,6 +116,7 @@
                 $("lang").value = navigator.language.substr(0,2) == "ru" ? "ru" : "en";
                 language();
                 info();
+                document.querySelectorAll("input").forEach(e => {e.onclick = set});
                 let p = $("Plugins");
                 ['dragenter', 'dragover', 'dragleave', 'drop'].forEach((en, i) => {
                     p.addEventListener(en, (e) => {e.preventDefault(); e.stopPropagation()}, false);
@@ -144,13 +140,14 @@
             <tr><th><span lang="en">Platform</span><span lang="ru">Платформа</span>:</th><td id="Platform"></td></tr>
             <tr><th><span lang="en">Memory used</span><span lang="ru">Используется памяти</span>:</th><td><span id="MemAlloc"></span> / <span id="MemSys"></span> KB</td></tr>
             <tr><th colspan="2"><span lang="en">Settings</span><span lang="ru">Настройки</span>:</th></tr>    
-            <tr><th><span lang="en">My video</span><span lang="ru">Моё видео</span>:</th><td><input class="folder" id="Video" readonly data-ru="Введите путь к видео файлам:" data-en="Enter the path to video files:" onclick="symlink(this)"></td></tr>
-            <tr><th><span lang="en">My music</span><span lang="ru">Моя музыка</span>:</th><td><input class="folder" id="Music" readonly data-ru="Введите путь к файлам с музыкой:" data-en="Enter the path to music files:" onclick="symlink(this)"></td></tr>
-            <tr><th><span lang="en">My photo</span><span lang="ru">Мои фотографии</span>:</th><td><input class="folder" id="Photo" readonly data-ru="Введите путь к фото файлам:" data-en="Enter the path to photo files:" onclick="symlink(this)"></td></tr>
-            <tr><th><span lang="en">Execution of</span><span lang="ru">Запуск</span> FFmpeg:</th><td><input class="exec" id="FFmpegCMD" readonly data-ru="Введите путь к фото файлам:" data-en="Enter the path to photo files:" onclick="ffmpeg(this)"></td></tr>
-            <tr><th><span lang="en">Port number of</span><span lang="ru">Номер порта</span> FFmpeg:</th><td><input class="port" id="FFmpegPORT" readonly data-ru="Введите путь к фото файлам:" data-en="Enter the path to photo files:" onclick="ffmpeg(this)"></td></tr>
-            <tr><th><a id="goTorr">TorrServer</a>:</th><td><input class="bolt" id="TorrServer" readonly data-ru="Введите адрес TorrServer:" data-en="Enter the address of TorrServer:" onclick="torr(this);"></td></tr>
-            <tr><th colspan="2"><span lang="en">Plugins (drag&drop the file to install)</span><span lang="ru">Плагины (перетащите файл для установки)</span>:</th></tr>    
+            <tr><th><span lang="en">My video</span><span lang="ru">Моё видео</span>:</th><td><input class="folder" id="Video" readonly data-ru="Введите путь к видео файлам:" data-en="Enter the path to video files:"></td></tr>
+            <tr><th><span lang="en">My music</span><span lang="ru">Моя музыка</span>:</th><td><input class="folder" id="Music" readonly data-ru="Введите путь к файлам с музыкой:" data-en="Enter the path to music files:"></td></tr>
+            <tr><th><span lang="en">My photo</span><span lang="ru">Мои фотографии</span>:</th><td><input class="folder" id="Photo" readonly data-ru="Введите путь к фото файлам:" data-en="Enter the path to photo files:"></td></tr>
+            <tr><th><span lang="en">Default background file</span><span lang="ru">Файл обоев по умолчанию</span>:</th><td><input class="image" id="Background" readonly data-ru="Введите имя файла картинки:" data-en="Enter the name of picture file:"></td></tr>
+            <tr><th><span lang="en">Execution of</span><span lang="ru">Запуск</span> FFmpeg:</th><td><input class="exec" id="FFmpegCMD" readonly data-ru="Введите команду запуска ffmpeg:" data-en="Enter the command to execute ffmpeg:"></td></tr>
+            <tr><th><span lang="en">Port number of</span><span lang="ru">Номер порта</span> FFmpeg:</th><td><input class="port" id="FFmpegPORT" readonly data-ru="Введите номер порта для вещания ffmpeg:" data-en="Enter the port number to stream ffmpeg:"></td></tr>
+            <tr><th><a id="goTorr">TorrServer</a>:</th><td><input class="bolt" id="TorrServer" readonly data-ru="Введите адрес TorrServer:" data-en="Enter the address of TorrServer:"></td></tr>
+            <tr><th colspan="2"><span lang="en">Plugins:<br>(drag&drop the file to install)</span><span lang="ru">Плагины:<br>(перетащите файл для установки)</span></th></tr>    
             <tr><td colspan="2" style="text-align: center;">
                 <select id="Plugins" size="10" style="width: 100%;" onchange="$('DEL').disabled = false;"></select>
             </td></tr>

@@ -30,17 +30,20 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 )
 
 var (
-	out     = log.New(ioutil.Discard, "(i) ", log.Flags())
-	mutexR  = new(sync.Mutex)
-	mutexF  = new(sync.Mutex)
-	mypath  string
-	started = time.Now()
+	out         = log.New(ioutil.Discard, "(i) ", log.Flags())
+	mutexR      = new(sync.Mutex)
+	mutexF      = new(sync.Mutex)
+	mypath      string
+	started     = time.Now()
+	tempDir     = os.TempDir()
+	performSecs = 1
 )
 
 func restart() {
@@ -74,7 +77,13 @@ func main() {
 		case "-d":
 			check(os.Chdir(filepath.Dir(mypath)))
 		default:
-			if a[0] != '-' {
+			if a[0] == '-' || a[0] == '+' {
+				continue
+			} else if i, e := strconv.Atoi(a); e == nil {
+				if i > 0 {
+					performSecs = i
+				}
+			} else {
 				server.Addr = a
 			}
 		}

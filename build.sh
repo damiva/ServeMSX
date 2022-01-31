@@ -24,9 +24,9 @@ for PLATFORM in "${PLATFORMS[@]}"; do
     f="distribs/$Name-$o-$a$e"
     echo -ne "> $f...\t"
     if [[ "$a" == "386" ]]; then
-        GOOS=$o GOARCH=$a GO386=softfloat go build -o $f -ldflags="-s -w"
+        GOOS=$o GOARCH=$a GO386=softfloat CGO_ENABLED=0 go build -o $f -ldflags="-s -w"
     else
-        GOOS=$o GOARCH=$a go build -o $f -ldflags="-s -w"
+        GOOS=$o GOARCH=$a CGO_ENABLED=0 go build -o $f -ldflags="-s -w"
     fi
     if [[ "$o" -ne "windows" ]]; then chmod +x $f; fi
     echo "done!"

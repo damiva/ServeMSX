@@ -71,7 +71,7 @@ func init() {
 				panic(400)
 			}
 		} else {
-			ls, id, pl := webmarks(), r.FormValue("id"), mediaList(r, "", "{ico:msx-white:bookmarks}", "movie", []plistObj{{"key": "red", "label": "{dic:Remove|Remove}", "action": "execute:http://" + r.Host + r.URL.Path, "data": "{context:id}"}}, true)
+			ls, id, pl := webmarks(), r.FormValue("id"), mediaList(r, "", "{ico:msx-white:bookmarks}", "movie", []plistObj{{"key": "red", "label": "{dic:Remove|Remove}", "action": "execute:http://" + r.Host + r.URL.Path, "data": "{context:id}"}}, true, false)
 			if stg.Clients[id]&cMarksLIFO != 0 {
 				for i := len(ls) - 1; i >= 0; i-- {
 					pl.Items = append(pl.Items, webmark(id, i, ls[i]))

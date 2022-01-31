@@ -27,9 +27,7 @@ func files(w http.ResponseWriter, r *http.Request) {
 		panic(404)
 	} else if e != nil {
 		panic(e)
-	} else if !f.IsDir() {
-		http.ServeFile(w, r, p)
-	} else {
+	} else if f.IsDir() {
 		fs, e := ioutil.ReadDir(p)
 		check(e)
 		var (
@@ -52,13 +50,13 @@ func files(w http.ResponseWriter, r *http.Request) {
 					Options: options(opt, plistObj{"key": "yellow", "label": "{dic:Up|up}", "action": "focus:index:0"}),
 				}
 			} else {
-				l = mediaList(r, "{ico:msx-white-soft:folder-open} "+f.Name(), "{ico:msx-white:photo-library}", "image", []plistObj{opt}, false)
+				l = mediaList(r, "{ico:msx-white-soft:folder-open} "+f.Name(), "{ico:msx-white:photo-library}", "image", []plistObj{opt}, false, false)
 			}
 			l.Flag = "photo"
 		case 'm':
-			l, ext = mediaList(r, "{ico:msx-white-soft:folder-open} "+f.Name(), "{ico:msx-white:library-music}", "audiotrack", nil, false), extAud
+			l, ext = mediaList(r, "{ico:msx-white-soft:folder-open} "+f.Name(), "{ico:msx-white:library-music}", "audiotrack", nil, false, true), extAud
 		default:
-			l, ext = mediaList(r, "{ico:msx-white-soft:folder-open} "+f.Name(), "{ico:msx-white:video-library}", "movie", nil, false), extVid
+			l, ext = mediaList(r, "{ico:msx-white-soft:folder-open} "+f.Name(), "{ico:msx-white:video-library}", "movie", nil, false, false), extVid
 		}
 		for _, f := range fs {
 			n := f.Name()
@@ -70,14 +68,20 @@ func files(w http.ResponseWriter, r *http.Request) {
 				if t != 'p' && stg.TorrServer != "" {
 					ts = append(ts, plistObj{"icon": "msx-yellow:offline-bolt", "label": n, "action": "content:http://" + r.Host + "/msx/torr?id={ID}&link=" + url.QueryEscape(u)})
 				}
+			case t != 'p' && stg.Background != "" && n == stg.Background:
+				l.Background = u
 			case strings.Contains(ext, x):
 				i := plistObj{z: n, "playerLabel": n, "extensionLabel": sizeFormat(f.Size())}
-				if t == 'p' {
+				switch t {
+				case 'p':
 					i["action"] = "image:" + u
 					if stg.Clients[id]&cPhoto != 0 {
-						i["image"] = u
+						i["image"] = u + "?scale"
 					}
-				} else {
+				case 'm':
+					i["cover"] = u + "?cover"
+					fallthrough
+				default:
 					i["action"] = playerURL(id, u, t == 'v')
 				}
 				ms = append(ms, i)
@@ -85,6 +89,21 @@ func files(w http.ResponseWriter, r *http.Request) {
 		}
 		l.Items = append(l.Items, append(ts, ms...)...)
 		l.write(w)
+	} else if q := r.URL.Query(); p[0] == 'p' && stg.FFmpegCMD != "" && q.Has("scale") {
+		f, e := ffmpegPic(p)
+		check(e)
+		f = filepath.Join(tempDir, f)
+		http.ServeFile(w, r, f)
+		out.Println("Remove", f, "error:", os.Remove(f))
+	} else if p[0] == 'm' && q.Has("cover") {
+		if f, e := ffmpegPic(p); e == nil {
+			svcAnswer(w, "player:background:http://"+r.Host+"/msx/temp/"+url.PathEscape(f), nil)
+		} else {
+			out.Println("ffmpeg error:", e)
+			svcAnswer(w, "[]", nil)
+		}
+	} else {
+		http.ServeFile(w, r, p)
 	}
 }
 func sizeFormat(i int64) string {
