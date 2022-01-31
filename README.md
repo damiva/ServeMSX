@@ -47,3 +47,5 @@ In a browser go to Web UI: **http://{IP}:8008** and set the folders (on server s
 To play torrents online, you should install and use [TorrServer](https://github.com/YouROK/TorrServer/releases).<br>In the ServeMSX on Media Station X goto **Settings -> TorrServer** and enter the address (default port is 8090) of the machine where TorrServer is running (if it is the same maching with ServeMSX, it will be detected automatically).
 ### Plugins
 In a browser go to Web UI: **http://{IP}:8008** and add plugins (**.tgz** files).
+### FFmpeg faturies
+Install ffmpeg on the same machine where ServeMSX is running. If your ffmpeg installation has another command to execute (default is **ffmpeg**) please set it in Web UI settings.
