@@ -33,6 +33,7 @@ Choose the apropriate file for your OS/Architecture from the releases, download 
 - **-s** - skip verifying TLS sertificates (useful for tiny OS, like on routers)
 - **-d** - use the directory of execution as working directory (default is current working directory)
 - **+f** - log ffmpeg messages (they are not logged by default)
+- **[int]** - seconds to wait for performing *service restart* and *ffmpeg execution* (default is 1, if you have more slowly machine please set more)
 ### Note for running as service:
 - Errors logs to STDERR, 
 - Info messages logs to STDOUT,
