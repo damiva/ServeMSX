@@ -87,11 +87,11 @@ func init() {
 			lst = "{dic:Default|default} {col:msx-white}{ico:toggle-on} {dic:Compress|compressed}"
 		}
 		hard := runtime.GOOS + "/" + runtime.GOARCH
-		if stg.FFmpegCMD != "" {
+		if stg.FFmpeg != "" {
 			hard += " {txt:msx-yellow:+ ffmpeg}"
 		}
 		l.Menu = append(l.Menu, plistObj{"id": "stg", "icon": "settings", "label": "{dic:label:settings|Settings}",
-			"data": plistObj{"extension": "{ico:msx-white:settings}", "options": options(plistObj{"key": "red", "label": "{dic:label:reload|Reload}", "action": "reload"}),
+			"data": plistObj{"extension": "{ico:msx-white:settings}",
 				"pages": []map[string][]plistObj{{"items": {
 					{"type": "space", "layout": "0,0,12,2", "image": u + "/logotype.png", "imageFiller": "height", "imageWidth": 7, "imagePreload": true,
 						"headline":    "{txt:msx-white-soft:dic:label:version|Version} " + Vers,

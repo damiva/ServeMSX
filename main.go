@@ -42,7 +42,7 @@ var (
 	mutexF      = new(sync.Mutex)
 	mypath      string
 	started     = time.Now()
-	tempDir     = os.TempDir()
+	tempDir     = filepath.Join(os.TempDir(), Name)
 	performSecs = 1
 )
 
@@ -62,6 +62,7 @@ func main() {
 	defer log.Fatalln(recover())
 	mypath, e = os.Executable()
 	check(e)
+	check(os.MkdirAll(tempDir, 0777))
 	for _, a := range os.Args[1:] {
 		switch a {
 		case "-t":
@@ -71,7 +72,7 @@ func main() {
 			log.SetPrefix("<!> ")
 			out.SetOutput(os.Stdout)
 		case "+f":
-			logFFmpeg = true
+			ffmpegLog = true
 		case "-s":
 			http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 		case "-d":
@@ -109,8 +110,10 @@ func main() {
 			log.Println(e)
 		}
 	}
-	if e = checkFFmpeg(); e != nil {
-		log.Println(e)
+	for _, k := range []bool{true, false} {
+		if e = checkFFmpeg(k); e != nil {
+			log.Println(e)
+		}
 	}
 	out.Println(Name, "v.", Vers, "listening at", server.Addr)
 	check(server.ListenAndServe())

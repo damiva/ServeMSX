@@ -93,7 +93,7 @@ func torrLink(w http.ResponseWriter, r *http.Request, p string) {
 	if !r.Form.Has("noadd") {
 		as = append(as, plistObj{"key": "green", "label": "{dic:AddTorr|Add the torrent to My torrents}", "action": "execute:fetch:http://" + r.Host + "/msx/torr?add=" + url.QueryEscape(p) + "&ttl=" + url.QueryEscape(r.FormValue("ttl")) + "&img=" + url.QueryEscape(r.FormValue("img"))})
 	}
-	l := mediaList(r, "{ico:msx-white-soft:offline-bolt} "+t.Title, "{ico:msx-white:attach-file} "+sizeFormat(t.Torrent_size), "movie", as, false, false)
+	l := mediaList(r, "{ico:msx-white-soft:offline-bolt} "+t.Title, "{ico:msx-white:attach-file} "+sizeFormat(t.Torrent_size), "movie", as, false, false, true)
 	as = nil
 	tu, id := "http://"+stg.TorrServer+"/stream/", r.FormValue("id")
 	if t.Active_peers > 0 || t.Total_peers > 0 {

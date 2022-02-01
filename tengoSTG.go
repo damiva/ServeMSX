@@ -44,6 +44,7 @@ func tengoSTG(r *http.Request) (m map[string]tengo.Object) {
 			}
 		}},
 		"player": &tengo.UserFunction{Name: "player", Value: func(args ...tengo.Object) (tengo.Object, error) {
+			var ext bool
 			switch len(args) {
 			case 0:
 				if stg.Clients[id]&cHTML5X == 0 {
@@ -51,11 +52,14 @@ func tengoSTG(r *http.Request) (m map[string]tengo.Object) {
 				} else {
 					return &tengo.String{Value: "html5x"}, nil
 				}
+			case 2:
+				ext = !args[1].IsFalsy()
+				fallthrough
 			case 1:
 				switch a := args[0].(type) {
 				case *tengo.Bool:
 					ps := &tengo.Map{Value: make(map[string]tengo.Object)}
-					for k, p := range playerProp(r.Host, id, !a.IsFalsy()) {
+					for k, p := range playerProp(r.Host, id, !a.IsFalsy(), ext) {
 						ps.Value[k] = &tengo.String{Value: p}
 					}
 					return ps, nil
@@ -109,10 +113,11 @@ func tengoSTG(r *http.Request) (m map[string]tengo.Object) {
 					return &tengo.Error{Value: &tengo.String{Value: e.Error()}}, nil
 				}
 			default:
-				if stg.FFmpegCMD != "" && stg.FFmpegPORT != "" {
+				if stg.FFmpeg != "" && stg.FFstream != "" {
 					return &tengo.Map{Value: map[string]tengo.Object{
-						"cmd":  &tengo.String{Value: stg.FFmpegCMD},
-						"port": &tengo.String{Value: stg.FFmpegPORT},
+						"ffmpeg":  &tengo.String{Value: stg.FFmpeg},
+						"port":    &tengo.String{Value: stg.FFstream},
+						"ffprobe": &tengo.String{Value: stg.FFprobe},
 					}}, nil
 				} else {
 					return nil, nil

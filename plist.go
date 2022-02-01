@@ -33,17 +33,22 @@ func (p *plist) write(w io.Writer) error {
 	j.SetIndent("", "  ")
 	return j.Encode(p)
 }
-func mediaList(r *http.Request, hdr, ext, ico string, opt []plistObj, optEach, cover bool) *plist {
+func mediaList(r *http.Request, hdr, ext, ico string, opt []plistObj, optEach, cover, exted bool) *plist {
 	id := r.FormValue("id")
 	if ico != "" {
 		ico = "msx-white-soft:" + ico
 	}
-	ps, cmp, lay := playerProp(r.Host, id, false), id != "" && stg.Clients[id]&cCompressed != 0, "0,0,12,1"
+	ps, cmp, lay := playerProp(r.Host, id, false, exted), id != "" && stg.Clients[id]&cCompressed != 0, "0,0,12,1"
 	if cmp {
 		lay = "0,0,16,1"
 	}
 	ps["resume:key"] = "url"
-	ps["trigger:load"] = "execute:fetch:{context:cover}"
+	if hdr != "" && exted {
+		ps["info:text"] = hdr
+	}
+	if cover {
+		ps["trigger:load"] = "execute:fetch:{context:cover}"
+	}
 	opt = append(opt, nil)
 	liv := plistObj{"type": "playback", "action": "player:show"}
 	rtn := &plist{
@@ -71,7 +76,7 @@ func playerURL(id, ur string, iv bool) string {
 	}
 	return ur
 }
-func playerProp(host, id string, live bool) (ps map[string]string) {
+func playerProp(host, id string, live, ext bool) (ps map[string]string) {
 	if live {
 		ps = map[string]string{
 			"button:play_pause:display": "false",
@@ -85,6 +90,9 @@ func playerProp(host, id string, live bool) (ps map[string]string) {
 		}
 	} else {
 		ps = map[string]string{"button:content:icon": "settings"}
+	}
+	if ext {
+		ps["control:type"] = "extended"
 	}
 	switch {
 	case stg.Clients[id]&cHTML5X != 0:

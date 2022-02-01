@@ -5,8 +5,8 @@ import (
 	"errors"
 	"net/http"
 	"os"
-	"os/exec"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -14,13 +14,13 @@ import (
 const pthSettings, cHTML5X, cCompressed, cPhoto, cMarksLIFO = "settings.json", 1, 2, 4, 8
 
 type settings struct {
-	TorrServer, FFmpegCMD, FFmpegPORT, Background string
-	Clients                                       map[string]int
+	TorrServer, FFmpeg, FFprobe, FFstream, Background string
+	Clients                                           map[string]int
 }
 type client struct{ Addr, Platform, Player, Vers string }
 
 var (
-	stg     = &settings{FFmpegPORT: "8009", Background: "background.jpg"}
+	stg     = &settings{"", "ffmpeg", "ffprobe", "8009", "background.jpg", make(map[string]int)}
 	clients = make(map[string]client)
 )
 
@@ -91,15 +91,18 @@ func (s *settings) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					case "Background":
 						s.Background = ss
 						check(s.save())
-					case "FFmpegCMD":
-						if s.FFmpegCMD = ss; s.FFmpegCMD != "" {
-							var e error
-							s.FFmpegCMD, e = exec.LookPath(s.FFmpegCMD)
+					case "FFmpeg":
+						o = false
+						fallthrough
+					case "FFprobe":
+						check(checkFFmpeg(o))
+						check(s.save())
+					case "FFstream":
+						if ss != "" {
+							_, e := strconv.Atoi(ss)
 							check(e)
 						}
-						check(s.save())
-					case "FFmpegPORT":
-						s.FFmpegPORT = ss
+						s.FFstream = ss
 						check(s.save())
 					}
 				}

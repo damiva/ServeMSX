@@ -31,13 +31,16 @@ func files(w http.ResponseWriter, r *http.Request) {
 		fs, e := ioutil.ReadDir(p)
 		check(e)
 		var (
-			l      *plist
-			ext    string
-			z      = "label"
-			ts, ms []plistObj
-			t      byte
+			l        *plist
+			ext, hdr string
+			z        = "label"
+			ts, ms   []plistObj
+			t        byte
 		)
 		id := r.FormValue("id")
+		if strings.IndexRune(p, filepath.Separator) > 0 {
+			hdr = "{ico:msx-white-soft:folder-open} " + f.Name()
+		}
 		switch t = p[0]; t {
 		case 'p':
 			opt := plistObj{"key": "green", "label": "{dic:Files|List of files} {ico:apps}", "action": "execute:http://" + r.Host + "/settings?id={ID}", "data": cPhoto}
@@ -45,18 +48,18 @@ func files(w http.ResponseWriter, r *http.Request) {
 			if stg.Clients[id]&cPhoto != 0 {
 				opt["label"] = "{dic:Files|List of files} {ico:list}"
 				z, l = "title", &plist{
-					Type: "list", Head: "{ico:msx-white-soft:folder-open} " + f.Name(), Ext: "{ico:msx-white:photo-library}",
+					Type: "list", Head: hdr, Ext: "{ico:msx-white:photo-library}",
 					Template: plistObj{"type": "separate", "imageFiller": "smart", "layout": "0,0,4,4"}, Compress: true,
 					Options: options(opt, plistObj{"key": "yellow", "label": "{dic:Up|up}", "action": "focus:index:0"}),
 				}
 			} else {
-				l = mediaList(r, "{ico:msx-white-soft:folder-open} "+f.Name(), "{ico:msx-white:photo-library}", "image", []plistObj{opt}, false, false)
+				l = mediaList(r, hdr, "{ico:msx-white:photo-library}", "image", []plistObj{opt}, false, false, false)
 			}
 			l.Flag = "photo"
 		case 'm':
-			l, ext = mediaList(r, "{ico:msx-white-soft:folder-open} "+f.Name(), "{ico:msx-white:library-music}", "audiotrack", nil, false, true), extAud
+			l, ext = mediaList(r, hdr, "{ico:msx-white:library-music}", "audiotrack", nil, false, true, true), extAud
 		default:
-			l, ext = mediaList(r, "{ico:msx-white-soft:folder-open} "+f.Name(), "{ico:msx-white:video-library}", "movie", nil, false, false), extVid
+			l, ext = mediaList(r, hdr, "{ico:msx-white:video-library}", "movie", nil, false, false, true), extVid
 		}
 		for _, f := range fs {
 			n := f.Name()
@@ -76,10 +79,10 @@ func files(w http.ResponseWriter, r *http.Request) {
 				case 'p':
 					i["action"] = "image:" + u
 					if stg.Clients[id]&cPhoto != 0 {
-						i["image"] = u + "?scale"
+						i["image"] = strings.Replace(u, "/msx/", pthFFmpeg, 1)
 					}
 				case 'm':
-					i["cover"] = u + "?cover"
+					i["cover"] = strings.Replace(u, "/msx/", pthFFmpeg, 1)
 					fallthrough
 				default:
 					i["action"] = playerURL(id, u, t == 'v')
@@ -89,19 +92,6 @@ func files(w http.ResponseWriter, r *http.Request) {
 		}
 		l.Items = append(l.Items, append(ts, ms...)...)
 		l.write(w)
-	} else if q := r.URL.Query(); p[0] == 'p' && stg.FFmpegCMD != "" && q.Has("scale") {
-		f, e := ffmpegPic(p)
-		check(e)
-		f = filepath.Join(tempDir, f)
-		http.ServeFile(w, r, f)
-		out.Println("Remove", f, "error:", os.Remove(f))
-	} else if p[0] == 'm' && q.Has("cover") {
-		if f, e := ffmpegPic(p); e == nil {
-			svcAnswer(w, "player:background:http://"+r.Host+"/msx/temp/"+url.PathEscape(f), nil)
-		} else {
-			out.Println("ffmpeg error:", e)
-			svcAnswer(w, "[]", nil)
-		}
 	} else {
 		http.ServeFile(w, r, p)
 	}

@@ -23,6 +23,8 @@
             .port       {background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22slategray%22%3E%3Cpath%20d%3D%22M22.548%209l.452-2h-5.364l1.364-6h-2l-1.364%206h-5l1.364-6h-2l-1.364%206h-6.184l-.452%202h6.182l-1.364%206h-5.36l-.458%202h5.364l-1.364%206h2l1.364-6h5l-1.364%206h2l1.364-6h6.185l.451-2h-6.182l1.364-6h5.366zm-8.73%206h-5l1.364-6h5l-1.364%206z%22%2F%3E%3C%2Fsvg%3E");}
             .image      {background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22slategray%22%3E%3Cpath%20d%3D%22M5%208.5c0-.828.672-1.5%201.5-1.5s1.5.672%201.5%201.5c0%20.829-.672%201.5-1.5%201.5s-1.5-.671-1.5-1.5zm9%20.5l-2.519%204-2.481-1.96-4%205.96h14l-5-8zm8-4v14h-20v-14h20zm2-2h-24v18h24v-18z%22%2F%3E%3C%2Fsvg%3E");}
             .dragon     {background-color: green;}
+            .u          {border-bottom: 1px solid gray;}
+            #Version:not(:empty)::before {content: " v. "}
         </style>
         <script>
             function $(url, fok, dat){
@@ -42,7 +44,7 @@
                     $("DEL").disabled = true;
                     ["Version", "Platform"].forEach(e => { if(d[e]) $(e).innerText = d[e]});
                     ["MemSys", "MemAlloc"].forEach(e => { $(e).innerText = Math.round(d[e] / 1024) });
-                    ["TorrServer", "Video", "Music", "Photo", "FFmpegCMD", "FFmpegPORT", "Background"].forEach(e => { $(e).value = d[e] || ""});
+                    ["TorrServer", "Video", "Music", "Photo", "FFmpeg", "FFstream", "FFprobe", "Background"].forEach(e => { $(e).value = d[e] || ""});
                     if(d.TorrServer) $("goTorr").href = "http://" + d.TorrServer;
                     let ps = $("Plugins");
                     ps.disabled = !Array.isArray(d.Plugins) || d.Plugins.length == 0;
@@ -59,7 +61,7 @@
             }
             function set() {
                 if(this.disabled) return;
-                const p = prompt(this.dataset[$("lang")], this.value)
+                const p = prompt(this.dataset[$("lang").value], this.value)
                 if(p === null) return;
                 let r = {data: {}};
                 if(this.id == "TorrServer") r.data = p;
@@ -130,7 +132,7 @@
         <fieldset id="MAIN" style="margin: 0 auto 0 auto; padding: 0; width: max-content; border: 1px solid black;" disabled>
         <table style="border-collapse: collapse;">
             <caption style="background-color: black; color: white; text-align: left; padding: .5em .5em 0 .5em;">
-                <img src="/logotype.png" style="height:3em;vertical-align: text-top;"> v. <span id="Version"></span>
+                <img src="/logotype.png" style="height:3em;vertical-align: text-top;" alt="ServeMSX"><span id="Version"></span>
                 <select id="lang" style="float: right; background-color: black; color: white; border: none;" onchange="language()"><option>ru</option><option>en</option></select>    
             </caption>
             <tr>
@@ -143,9 +145,10 @@
             <tr><th><span lang="en">My video</span><span lang="ru">Моё видео</span>:</th><td><input class="folder" id="Video" readonly data-ru="Введите путь к видео файлам:" data-en="Enter the path to video files:"></td></tr>
             <tr><th><span lang="en">My music</span><span lang="ru">Моя музыка</span>:</th><td><input class="folder" id="Music" readonly data-ru="Введите путь к файлам с музыкой:" data-en="Enter the path to music files:"></td></tr>
             <tr><th><span lang="en">My photo</span><span lang="ru">Мои фотографии</span>:</th><td><input class="folder" id="Photo" readonly data-ru="Введите путь к фото файлам:" data-en="Enter the path to photo files:"></td></tr>
-            <tr><th><span lang="en">Default background file</span><span lang="ru">Файл обоев по умолчанию</span>:</th><td><input class="image" id="Background" readonly data-ru="Введите имя файла картинки:" data-en="Enter the name of picture file:"></td></tr>
-            <tr><th><span lang="en">Execution of</span><span lang="ru">Запуск</span> FFmpeg:</th><td><input class="exec" id="FFmpegCMD" readonly data-ru="Введите команду запуска ffmpeg:" data-en="Enter the command to execute ffmpeg:"></td></tr>
-            <tr><th><span lang="en">Port number of</span><span lang="ru">Номер порта</span> FFmpeg:</th><td><input class="port" id="FFmpegPORT" readonly data-ru="Введите номер порта для вещания ffmpeg:" data-en="Enter the port number to stream ffmpeg:"></td></tr>
+            <tr class="u"><th><span lang="en">Background file in folders</span><span lang="ru">Файл обоев в папках</span>:</th><td><input class="image" id="Background" readonly data-ru="Введите имя файла картинки:" data-en="Enter the name of a picture file:"></td></tr>
+            <tr><th><span lang="en">Execution of</span><span lang="ru">Запуск</span> FFmpeg:</th><td><input class="exec" id="FFmpeg" readonly data-ru="Введите команду запуска ffmpeg:" data-en="Enter the command to execute ffmpeg:"></td></tr>
+            <tr><th><span lang="en">Execution of</span><span lang="ru">Запуск</span> FFprobe:</th><td><input class="exec" id="FFprobe" readonly data-ru="Введите команду запуска ffprobe:" data-en="Enter the command to execute ffprobe:"></td></tr>
+            <tr class="u"><th><span lang="en">Port number of</span><span lang="ru">Номер порта</span> FFmpeg:</th><td><input class="port" id="FFstream" readonly data-ru="Введите номер порта для вещания ffmpeg:" data-en="Enter the port number to stream ffmpeg:"></td></tr>
             <tr><th><a id="goTorr">TorrServer</a>:</th><td><input class="bolt" id="TorrServer" readonly data-ru="Введите адрес TorrServer:" data-en="Enter the address of TorrServer:"></td></tr>
             <tr><th colspan="2"><span lang="en">Plugins:<br>(drag&drop the file to install)</span><span lang="ru">Плагины:<br>(перетащите файл для установки)</span></th></tr>    
             <tr><td colspan="2" style="text-align: center;">
