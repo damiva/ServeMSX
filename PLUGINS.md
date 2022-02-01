@@ -167,3 +167,4 @@ HTTP requests http://{IP}:{PORT}/**[URI]**, where the **[URI]** can be:
 |msx/photo/[path]	|GET	| |JSON	|Returns the content of photo folder (My photo)|
 |msx/torr	|GET	|link=*url/magnet/hash*<br>ttl=*title*<br>img=*url*	|JSON	|If *link* is not set, returns the content of TorrServer's torrents (My torrents).<br>If *link* is set, returns the content of the torrent, if *ttl* & *img* are set, the title and url to poster will be added if user press "Add torrent to My torrents" (yellow) button.|
 |msx/input	|POST	|JSON object with properties:<br>**"action":"*string*"**,<br>"headline":"*string*",<br>"extension":"*string*",<br>"value":"*string*"	|JSON	|Returns a panel with keyboard asking user to enter a text. Afer user entered the text it executes the "action" with POST request with JSON: `{"data":"text"}`|
+|msx/ffmpeg/{path}	|GET	| |JSON/JPEG |For using ffmpeg functionality...|
