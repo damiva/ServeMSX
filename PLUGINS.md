@@ -73,11 +73,11 @@ srv := import("server")
 - `header {map of arrays of strings}`: the request header fields.
 - `uri {string}`: unmodified request-target of the Request-Line (RFC 7230, Section 3.1.1) as sent by the client to a server.
 - `version {string}`: the current version of ServeMSX.
-- `script {string}: the name of script file is running.
+- `script {string}`: the name of script file is running.
 - `plugin {string}`: the name of the plugin is running.
 - `path {string}`: the path of the request's uri (after plugin name) (e.g. http://{ip}:{port}/{plugin}/**[path]**).
 - `base_url {string}`: the base url of the plugin (e.g. **http://{ip}:{port}/{plugin}/**).
-- `settings {map}`: the object representing user's settings...
+- `settings {map}`: the object with properties & functions for work with user's settings...
 
 #### Functions
 - `read() => {bytes/error}`: returns the request body as is.
