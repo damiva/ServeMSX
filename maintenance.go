@@ -62,7 +62,7 @@ func init() {
 				}
 				if as[0] != "" {
 					if r.FormValue("v") == "" {
-						w.Write([]byte(`{"link":"` + strings.Join(as, "&dic=") + `","tag":"` + i.Tag_name + `"}`))
+						w.Write([]byte(`{"link":"` + strings.Join(as, "&dic=") + `","tag":"` + i.Tag_name + `","wait":` + strconv.Itoa(performSecs) + `}`))
 					} else {
 						svcAnswer(w, "execute:http://"+r.Host+"/msx/dialog", dialogStg{
 							"execute:fetch:http://" + r.Host + "/update?link=" + strings.Join(as, "&dic="),

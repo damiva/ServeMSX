@@ -43,20 +43,23 @@ func init() {
 			}
 			svcAnswer(w, act, dat)
 		} else {
-			ds := []plistObj{{"label": "default", "data": ""}}
-			i, e := gitRelease("", Vers)
-			check(e)
-			for _, a := range i.Assets {
-				if strings.HasSuffix(a.Name, ".json.gz") {
-					ds = append(ds, plistObj{"label": strings.TrimSuffix(a.Name, ".json.gz"), "data": a.Browser_download_url})
-				}
-			}
-			(&plist{
+			l := &plist{
 				Type:     "list",
 				Head:     "{dic:label:language|Language}:",
 				Template: plistObj{"type": "button", "layout": "0,0,8,1", "action": "execute:http://" + r.Host + r.URL.Path},
-				Items:    ds,
-			}).write(w)
+				Items:    []plistObj{{"label": "default", "data": ""}},
+			}
+			i, e := gitRelease("", Vers)
+			if e == nil {
+				for _, a := range i.Assets {
+					if strings.HasSuffix(a.Name, ".json.gz") {
+						l.Items = append(l.Items, plistObj{"label": strings.TrimSuffix(a.Name, ".json.gz"), "data": a.Browser_download_url})
+					}
+				}
+			} else {
+				l.Ready = plistObj{"action": "error:" + e.Error()}
+			}
+			l.write(w)
 		}
 	})
 }

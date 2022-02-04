@@ -9,23 +9,26 @@ import (
 
 type plistObj map[string]interface{}
 type plist struct {
-	Type       string                  `json:"type,omitempty"`
-	Reuse      bool                    `json:"reuse"`
-	Cache      bool                    `json:"cache"`
-	Restore    bool                    `json:"restore"`
-	Compress   bool                    `json:"compress,omitempty"`
-	Background string                  `json:"background,omitempty"`
-	Action     string                  `json:"action,omitempty"`
-	Flag       string                  `json:"flag,omitempty"`
-	Head       string                  `json:"headline,omitempty"`
-	Ext        string                  `json:"extension,omitempty"`
-	Logo       string                  `json:"logo,omitempty"`
-	Header     plistObj                `json:"header,omitempty"`
-	Options    plistObj                `json:"options,omitempty"`
-	Template   plistObj                `json:"template,omitempty"`
-	Items      []plistObj              `json:"items,omitempty"`
-	Pages      []map[string][]plistObj `json:"pages,omitempty"`
-	Menu       []plistObj              `json:"menu,omitempty"`
+	Type        string                  `json:"type,omitempty"`
+	Reuse       bool                    `json:"reuse"`
+	Cache       bool                    `json:"cache"`
+	Restore     bool                    `json:"restore"`
+	Compress    bool                    `json:"compress,omitempty"`
+	Transparent int                     `json:"transparent,omitempty"`
+	Background  string                  `json:"background,omitempty"`
+	Action      string                  `json:"action,omitempty"`
+	Flag        string                  `json:"flag,omitempty"`
+	Head        string                  `json:"headline,omitempty"`
+	Ext         string                  `json:"extension,omitempty"`
+	Logo        string                  `json:"logo,omitempty"`
+	Style       string                  `json:"style,omitempty"`
+	Ready       plistObj                `json:"ready,omitempty"`
+	Header      plistObj                `json:"header,omitempty"`
+	Options     plistObj                `json:"options,omitempty"`
+	Template    plistObj                `json:"template,omitempty"`
+	Items       []plistObj              `json:"items,omitempty"`
+	Pages       []map[string][]plistObj `json:"pages,omitempty"`
+	Menu        []plistObj              `json:"menu,omitempty"`
 }
 
 func (p *plist) write(w io.Writer) error {
@@ -56,9 +59,9 @@ func mediaList(r *http.Request, hdr, ext, ico string, opt []plistObj, optEach, c
 		Template: plistObj{"icon": ico, "type": "control", "layout": lay, "progress": -1, "live": liv, "properties": ps},
 	}
 	if optEach {
-		rtn.Template["options"] = options(opt...)
+		rtn.Template["options"] = options("", opt...)
 	} else {
-		rtn.Options = options(opt...)
+		rtn.Options = options("", opt...)
 	}
 	return rtn
 }
@@ -94,6 +97,7 @@ func playerProp(host, id string, live, ext bool) (ps map[string]string) {
 	if ext {
 		ps["control:type"] = "extended"
 	}
+	ps["trigger:stop"] = "execute:service:fetch:http://" + host + pthVideoWall
 	switch {
 	case stg.Clients[id]&cHTML5X != 0:
 		ps["button:content:action"] = "panel:request:player:options"
@@ -106,8 +110,11 @@ func playerProp(host, id string, live, ext bool) (ps map[string]string) {
 	}
 	return
 }
-func options(opts ...plistObj) plistObj {
-	cap := "{dic:caption:options|Options}:"
+func options(cap string, opts ...plistObj) plistObj {
+	if cap == "" {
+		cap = "{dic:caption:options|Options}"
+	}
+	cap += ":"
 	for i := 0; i < len(opts); i++ {
 		if opts[i] == nil {
 			opts[i] = plistObj{"key": "yellow", "label": "{dic:Up|Up}", "action": "[cleanup|focus:index:0]"}

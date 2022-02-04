@@ -36,6 +36,7 @@ func files(w http.ResponseWriter, r *http.Request) {
 			z        = "label"
 			ts, ms   []plistObj
 			t        byte
+			hl, hs   int
 		)
 		id := r.FormValue("id")
 		if strings.IndexRune(p, filepath.Separator) > 0 {
@@ -50,12 +51,20 @@ func files(w http.ResponseWriter, r *http.Request) {
 				z, l = "title", &plist{
 					Type: "list", Head: hdr, Ext: "{ico:msx-white:photo-library}",
 					Template: plistObj{"type": "separate", "imageFiller": "smart", "layout": "0,0,4,4"}, Compress: true,
-					Options: options(opt, plistObj{"key": "yellow", "label": "{dic:Up|up}", "action": "focus:index:0"}),
+					Options: options("", opt, plistObj{"key": "yellow", "label": "{dic:Up|up}", "action": "focus:index:0"}),
 				}
 			} else {
 				l = mediaList(r, hdr, "{ico:msx-white:photo-library}", "image", []plistObj{opt}, false, false, false)
 			}
 			l.Flag = "photo"
+			if hh := r.FormValue("height"); hh != "" && stg.FFmpeg != "" {
+				if hs, _ = strconv.Atoi(hh); hs > 0 {
+					if stg.Clients[id]&cPhotoScale != 0 {
+						hl = hs
+					}
+					hs /= 4
+				}
+			}
 		case 'm':
 			l, ext = mediaList(r, hdr, "{ico:msx-white:library-music}", "audiotrack", nil, false, true, true), extAud
 		default:
@@ -66,7 +75,11 @@ func files(w http.ResponseWriter, r *http.Request) {
 			x, u := strings.ToLower(filepath.Ext(n)), "http://"+r.Host+r.URL.EscapedPath()+url.PathEscape(n)
 			switch {
 			case f.IsDir():
-				l.Items = append(l.Items, plistObj{"icon": "msx-yellow:folder", "label": n, "action": "content:" + u + "/?id={ID}"})
+				q := "/?id={ID}"
+				if t == 'p' {
+					q += "&height={HEIGHT}"
+				}
+				l.Items = append(l.Items, plistObj{"icon": "msx-yellow:folder", "label": n, "action": "content:" + u + q})
 			case x == ".torrent":
 				if t != 'p' && stg.TorrServer != "" {
 					ts = append(ts, plistObj{"icon": "msx-yellow:offline-bolt", "label": n, "action": "content:http://" + r.Host + "/msx/torr?id={ID}&link=" + url.QueryEscape(u)})
@@ -77,9 +90,18 @@ func files(w http.ResponseWriter, r *http.Request) {
 				i := plistObj{z: n, "playerLabel": n, "extensionLabel": sizeFormat(f.Size())}
 				switch t {
 				case 'p':
-					i["action"] = "image:" + u
+					uu := strings.Replace(u, "/msx/", pthFFmpeg, 1) + "?height="
+					if hl > 0 {
+						i["action"] = "image:" + uu + strconv.Itoa(hl)
+					} else {
+						i["action"] = "image:" + u
+					}
 					if stg.Clients[id]&cPhoto != 0 {
-						i["image"] = strings.Replace(u, "/msx/", pthFFmpeg, 1)
+						if hs > 0 {
+							i["image"] = uu + strconv.Itoa(hs)
+						} else {
+							i["image"] = u
+						}
 					}
 				case 'm':
 					i["cover"] = strings.Replace(u, "/msx/", pthFFmpeg, 1)

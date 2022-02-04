@@ -11,16 +11,17 @@ import (
 	"time"
 )
 
-const pthSettings, cHTML5X, cCompressed, cPhoto, cMarksLIFO = "settings.json", 1, 2, 4, 8
+const pthSettings, cHTML5X, cCompressed, cPhoto, cMarksLIFO, cPhotoScale = "settings.json", 1, 2, 4, 8, 16
 
 type settings struct {
 	TorrServer, FFmpeg, FFprobe, FFstream, Background string
+	VideoWall                                         int
 	Clients                                           map[string]int
 }
 type client struct{ Addr, Platform, Player, Vers string }
 
 var (
-	stg     = &settings{"", "ffmpeg", "ffprobe", "8009", "background.jpg", make(map[string]int)}
+	stg     = &settings{"", "ffmpeg", "ffprobe", "8009", "background.jpg", 0, make(map[string]int)}
 	clients = make(map[string]client)
 )
 
@@ -56,6 +57,13 @@ func (s *settings) load() (e error) {
 	}
 	return
 }
+func (s *settings) switcher(r *http.Request, sv int, fv, tv string) string {
+	if s.Clients[r.FormValue("id")]&sv == 0 {
+		return "{col:msx-white}" + fv + " {ico:toggle-off}{col:msx-white-soft} " + tv
+	} else {
+		return "{col:msx-white-soft}" + fv + " {col:msx-white}{ico:toggle-on} " + tv
+	}
+}
 func (s *settings) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		var (
@@ -69,9 +77,13 @@ func (s *settings) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			a, d = s.setTorr(v, !r.URL.Query().Has("v"))
 			check(s.save())
 		case float64:
-			s.Clients[r.URL.Query().Get("id")] ^= int(v)
+			if k := int(v); k < 100 {
+				s.Clients[r.URL.Query().Get("id")] ^= k
+			} else {
+				s.VideoWall = k - 100
+			}
 			check(s.save())
-			a = "reload:menu"
+			a = "[cleanup|reload:menu]"
 		case map[string]interface{}:
 			for k, vv := range v {
 				if ss, o := vv.(string); o {

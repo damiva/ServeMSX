@@ -111,7 +111,7 @@
                     else if(confirm($() 
                         ? ("Есть обновление:\nServerMSX версия " + d.tag + "\nОбновить?") 
                         : ("There is an update:\nServeMSX version " + d.tag + "\nUpdate?")
-                    )) update("/update?link=" + d.link, document.location.reload());
+                    )) $("/update?link=" + d.link, () => {setTimeout(() => {document.location.reload()}, (d.wait || 1)*1000)});
                 })
             }
             function start(){

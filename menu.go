@@ -1,12 +1,16 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
 	"runtime"
+	"strconv"
 	"strings"
 )
+
+const pthVideoWall = "/msx/videowall"
 
 var startFocus string
 
@@ -28,17 +32,14 @@ func init() {
 	http.HandleFunc("/msx/menu", func(w http.ResponseWriter, r *http.Request) {
 		pls, id, u := strings.SplitN(r.FormValue("player"), "/", 2)[0], r.FormValue("id"), "http://"+r.Host
 		clients[id] = client{r.RemoteAddr, r.FormValue("platform"), pls, r.FormValue("v")}
-		if stg.Clients[id]&cHTML5X == 0 {
-			pls = "{txt:msx-white:" + pls + "} {ico:msx-white:toggle-off} html5x"
-		} else {
-			pls += " {col:msx-white}{ico:toggle-on} html5x"
-		}
-		l := &plist{Logo: u + "/logotype.png", Menu: []plistObj{}}
+		l := &plist{Logo: u + "/logotype.png", Flag: Name, Ready: plistObj{"action": "execute:service:video:data:http://" + r.Host + pthVideoWall}, Menu: []plistObj{}}
 		for i, f := range [4][2]string{{pthMarks, "bookmarks"}, {pthVideo, "video-library"}, {pthMusic, "library-music"}, {pthPhoto, "photo-library"}} {
 			if _, e := os.Stat(f[0]); !os.IsNotExist(e) {
 				c, s := "folder-open", "/?id={ID}"
 				if i == 0 {
 					c, s = "cloud-queue", "?id={ID}"
+				} else if i == 3 {
+					s += "&height={HEIGHT}"
 				}
 				l.Menu = append(l.Menu, plistObj{"icon": f[1], "extensionIcon": c, "label": "{dix:" + f[0] + "}My " + f[0], "data": u + "/msx/" + f[0] + s})
 			}
@@ -82,31 +83,73 @@ func init() {
 			}
 		}
 		ts := started.UnixMilli()
-		lst := "{txt:msx-white:dic:Default|default} {ico:msx-white:toggle-off} {dic:Compress|compressed}"
-		if stg.Clients[id]&cCompressed != 0 {
-			lst = "{dic:Default|default} {col:msx-white}{ico:toggle-on} {dic:Compress|compressed}"
-		}
 		hard := runtime.GOOS + "/" + runtime.GOARCH
 		if stg.FFmpeg != "" {
 			hard += " {txt:msx-yellow:+ ffmpeg}"
 		}
+		walls := []plistObj{{"offset": "0,0,5,-1", "label": "{dic:label:no|No}", "data": 100, "enumerate": false}, {"type": "space"}}
+		for i := 1; i < 7; i++ {
+			ii := strconv.Itoa(i)
+			walls = append(walls, plistObj{"image": "http://msx.benzac.de/media/thumbs/atmos" + ii + ".jpg", "label": ii, "data": 100 + i})
+		}
+		wall := "{dic:label:noту|None}"
+		if stg.VideoWall > 0 && stg.VideoWall < 7 {
+			wall = "{col:msx-white}" + strconv.Itoa(stg.VideoWall)
+		}
+		sa := "execute:" + u + "/settings?id={ID}"
 		l.Menu = append(l.Menu, plistObj{"id": "stg", "icon": "settings", "label": "{dic:label:settings|Settings}",
-			"data": plistObj{"extension": "{ico:msx-white:settings}",
+			"data": plistObj{"extension": "{ico:msx-white:settings}", "compress": true,
 				"pages": []map[string][]plistObj{{"items": {
-					{"type": "space", "layout": "0,0,12,2", "image": u + "/logotype.png", "imageFiller": "height", "imageWidth": 7, "imagePreload": true,
+					{"type": "space", "layout": "0,0,16,3", "image": u + "/logotype.png", "imageFiller": "width-top", "imageWidth": 10, "imagePreload": true,
 						"headline":    "{txt:msx-white-soft:dic:label:version|Version} " + Vers,
 						"titleHeader": "", "titleFooter": "{ico:http}{tb}{col:msx-white}" + r.Host +
 							"{br}{ico:msx-white-soft:hardware}{tb}" + hard +
-							"{br}{ico:msx-white-soft:web}{tb}https://github.com/" + gitRepo,
+							"{br}{br}{ico:msx-white-soft:web}{tb}https://github.com/" + gitRepo,
 						"live": plistObj{"type": "schedule", "from": ts, "to": ts, "titleHeader": "{ico:timer}{tb}{txt:msx-white:overflow:text:dhms}"}},
-					{"type": "space", "layout": "0,2,12,1", "text": "{txt:msx-white:" + Name + "} {dix:About}is a software for playing user's content and developing user's plugins.{br}It does not provide any video/audio content by itself!", "alignment": "center"},
-					{"id": "update", "type": "control", "layout": "0,3,6,1", "label": "{dic:CheckUp|Check updates}", "icon": "system-update-alt", "action": "execute:fetch:" + u + "/update"},
-					{"type": "control", "layout": "0,4,6,1", "icon": "smart-display", "label": "{dic:label:player|Player}:", "extensionLabel": pls, "action": "execute:" + u + "/settings?id={ID}", "data": cHTML5X},
-					{"type": "control", "layout": "0,5,6,1", "label": "{dic:Files|List of files}:", "icon": "format-list-bulleted", "extensionLabel": lst, "action": "execute:" + u + "/settings?id={ID}", "data": cCompressed},
-					{"id": "dic", "type": "control", "layout": "6,3,6,1", "icon": "language", "label": "{dic:Language|Language}:", "extensionLabel": "default", "action": "panel:" + u + "/msx/dictionary", "live": map[string]string{"type": "setup", "action": "execute:service:info:dictionary:" + u + "/msx/dictionary"}},
-					{"type": "control", "layout": "6,4,6,1", "icon": "bolt", "label": "TorrServer:", "extensionLabel": ta, "action": "execute:" + u + "/settings", "data": nil},
-					{"type": "control", "layout": "6,5,6,1", "label": "{dic:label:application|Application}", "icon": "monitor", "extensionIcon": "menu-open", "action": "dialog:application"},
+					{"type": "space", "layout": "0,3,16,1", "text": "{txt:msx-white:" + Name + "} {dix:About}is a software for playing user's content and developing user's plugins.{br}It does not provide any video/audio content by itself!", "alignment": "center"},
+
+					{"type": "control", "layout": "0,4,8,1", "label": "{dic:CheckUp|Check updates}", "icon": "system-update-alt", "action": "execute:fetch:" + u + "/update"},
+					{"type": "control", "layout": "0,5,8,1", "icon": "smart-display", "label": "{dic:label:player|Player}:", "extensionLabel": stg.switcher(r, cHTML5X, pls, "html5x"), "action": sa, "data": cHTML5X},
+					{"type": "control", "layout": "0,6,8,1", "label": "{dic:Files|List of files}:", "icon": "format-list-bulleted", "extensionLabel": stg.switcher(r, cCompressed, "{dic:Default|default}", "{dic:Compress|compressed}"), "action": sa, "data": cCompressed},
+					{"type": "control", "layout": "0,7,8,1", "icon": "photo-library", "label": "{dic:Slide|Photo size}:", "extensionLabel": stg.switcher(r, cPhotoScale, "{dic:Origin|as is}", "{dic:Scale|as screen}"), "action": sa, "data": cPhotoScale, "enable": stg.FFmpeg != ""},
+					{"id": "dic", "type": "control", "layout": "8,4,8,1", "icon": "language", "label": "{dic:Language|Language}:", "extensionLabel": "default", "action": "panel:" + u + "/msx/dictionary", "live": map[string]string{"type": "setup", "action": "execute:service:info:dictionary:" + u + "/msx/dictionary"}},
+					{"type": "control", "layout": "8,5,8,1", "icon": "bolt", "label": "TorrServer:", "extensionLabel": ta, "action": sa, "data": nil},
+					{"type": "control", "layout": "8,6,8,1", "label": "{dic:VideoWall|Video wallpaper}:", "icon": "wallpaper", "extensionLabel": wall, "action": "panel:data", "data": plistObj{
+						"type": "list", "headline": "{dic:VideoWall|Video wallpaper}:", "extension": "© Benjamin Zachey", "compress": true, "template": plistObj{"layout": "0,0,5,2", "imageFiller": "cover", "action": "[quiet|" + sa + "]"}, "items": walls,
+					}},
+					{"type": "control", "layout": "8,7,8,1", "label": "{dic:label:application|Application}", "icon": "monitor", "extensionIcon": "menu-open", "action": "dialog:application"},
 				}}}}})
 		l.write(w)
+	})
+	http.HandleFunc(pthVideoWall, func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case stg.VideoWall < 1 || stg.VideoWall > 6:
+			svcAnswer(w, "[]", nil)
+		case r.Method == "POST":
+			var i struct {
+				Video struct{ Data struct{ State int } }
+			}
+			if e := json.NewDecoder(r.Body).Decode(&i); e != nil {
+				panic(e)
+			} else if i.Video.Data.State > 1 {
+				svcAnswer(w, "[]", nil)
+				return
+			}
+			fallthrough
+		default:
+			i := strconv.Itoa(stg.VideoWall)
+			svcAnswer(w,
+				"video:auto:plugin:http://msx.benzac.de/plugins/background.html?url=http%3A%2F%2Fmsx.benzac.de%2Fmedia%2Fatmos"+i+".mp4",
+				plistObj{
+					"playerLabel": "Background Video " + i,
+					"properties": plistObj{
+						"control:type":        "extended",
+						"control:reuse":       "play",
+						"control:transparent": true,
+						"label:duration":      "{VALUE} {ico:repeat}",
+					},
+				},
+			)
+		}
 	})
 }

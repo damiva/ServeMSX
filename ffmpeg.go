@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -27,8 +28,12 @@ func init() {
 				log.Println(e)
 			}
 		} else if d = strings.ToLower(filepath.Ext(n)); strings.Contains(extPic, d) {
-			d = filepath.Join(tempDir, n) + ".jpeg"
-			if c := ffmpegCmd(false, "-hide_banner", "-i", p, "-y", "-vf", "scale=408:-1", d); c != nil && c.Run() == nil {
+			h, _ := strconv.Atoi(r.FormValue("height"))
+			if h < 1 {
+				h = 264
+			}
+			d = filepath.Join(tempDir, n) + ".png"
+			if c := ffmpegCmd(false, "-hide_banner", "-i", p, "-y", "-vf", "scale=-1:'min("+strconv.Itoa(h)+",ih)'", d); c != nil && c.Run() == nil {
 				http.ServeFile(w, r, d)
 				if e := os.Remove(d); e != nil {
 					log.Println(e)
@@ -38,7 +43,7 @@ func init() {
 			http.ServeFile(w, r, p)
 		} else if strings.Contains(extAud, d) {
 			var a []string
-			n += ".jpeg"
+			n += ".png"
 			d = filepath.Join(tempDir, n)
 			if c := ffmpegCmd(false, "-hide_banner", "-i", p, "-y", "-an", "-vf", "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2", d); c != nil && c.Run() == nil {
 				a = append(a, "player:background:http://"+r.Host+pthFFmpeg+url.PathEscape(n))

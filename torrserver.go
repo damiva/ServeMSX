@@ -39,7 +39,7 @@ func torrMain(w http.ResponseWriter, r *http.Request) {
 	sort.Slice(d, func(i, j int) bool { return d[i].Stat < d[j].Stat })
 	l := &plist{Type: "list", Ext: "{ico:msx-white:bolt} TorrServer: " + stg.TorrServer, Compress: cm, Template: plistObj{
 		"imageWidth": 1.25, "layout": ly, "imageFiller": "height-left", "icon": "msx-glass:bolt",
-		"options": options(
+		"options": options("",
 			plistObj{"key": "red", "label": "{dic:Remove|Remove}", "action": "execute:fetch:http://" + r.Host + "/msx/torr?del={context:id}"},
 			plistObj{"key": "green", "label": "{dic:Drop|Drop}", "action": "execute:fetch:http://" + r.Host + "/msx/torr?drop={context:id}"},
 			nil,
